@@ -103,6 +103,16 @@ Checkout-ul explică explicit mediul sandbox, comanda apare în administrare, ia
 
 Pentru captura cerută: deschide `https://pagespeed.web.dev/`, introdu URL-ul public și salvează ecranul cu rezultatele Mobile și Desktop.
 
+Raportul Mobile rulat la 26.10.2026 după optimizare a obținut:
+
+- **98 — Performanță**;
+- **91 — Accesibilitate**;
+- **100 — Cele mai bune practici**;
+- **100 — SEO**;
+- FCP 1,4 s, LCP 1,7 s, TBT 0 ms, CLS 0.
+
+Raport salvat: [PageSpeed Insights — Fir de Poveste](https://pagespeed.web.dev/analysis/https-fir-de-poveste-handmade-elatedpine3-chatgpt-site/9v9t26yub8?form_factor=mobile)
+
 ## 12. Limitări și trecerea la producție
 
 Produsele, clienții și firma din demo sunt fictive. Pentru producție sunt necesare: configurarea proiectului Supabase, chei Stripe test/live, pagini juridice, politici de retur, webhook Stripe pentru confirmarea server-side și un sistem de autentificare. Nicio cheie secretă nu trebuie comisă în repository.
