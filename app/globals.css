@@ -74,6 +74,13 @@ button:focus-visible, a:focus-visible, input:focus-visible, textarea:focus-visib
 .hero-visual { position: relative; z-index: 2; min-height: 510px; }
 .artisan-orbit { position: absolute; inset: -35px -55px -15px -25px; cursor: grab; }
 .artisan-orbit canvas { width: 100%; height: 100%; }
+.artisan-orbit-fallback { position: absolute; top: 50%; left: 52%; width: min(31vw,410px); aspect-ratio: 1; border-radius: 46% 54% 50% 48%; background: radial-gradient(circle at 35% 28%, #d7513b, #9f3028 62%, #6f211d); box-shadow: inset -25px -28px 45px rgba(74,22,18,.25), 0 35px 70px rgba(90,42,29,.18); transform: translate(-50%,-50%) rotate(-7deg); }
+.artisan-orbit-fallback::before, .artisan-orbit-fallback::after, .artisan-orbit-fallback span, .artisan-orbit-fallback i { position: absolute; inset: 7%; border: clamp(4px,.55vw,8px) solid #f1dfb9; border-radius: 50%; content: ""; }
+.artisan-orbit-fallback::before { transform: rotate(37deg) scaleX(.62); }
+.artisan-orbit-fallback::after { border-color: var(--green); transform: rotate(-28deg) scaleX(.57); }
+.artisan-orbit-fallback span { inset: 12% 3%; transform: rotate(73deg) scaleX(.68); }
+.artisan-orbit-fallback i { inset: 4% 18%; border-color: #f1dfb9; transform: rotate(118deg) scaleX(.56); }
+.artisan-orbit-fallback b { position: absolute; right: -7%; bottom: 8%; width: 68px; height: 68px; border: 13px solid var(--gold); border-radius: 43% 57% 49% 51%; transform: rotate(24deg); }
 .orbit-halo { position: absolute; top: 50%; left: 50%; width: 360px; height: 360px; border-radius: 50%; background: radial-gradient(circle, rgba(220,169,87,.35), rgba(220,169,87,0) 67%); transform: translate(-50%,-50%); filter: blur(6px); }
 .floating-note { position: absolute; z-index: 3; display: grid; min-width: 118px; grid-template-columns: 29px 1fr; border: 1px solid rgba(29,45,39,.13); border-radius: 12px; background: rgba(255,253,248,.78); padding: 11px 13px; box-shadow: 0 12px 35px rgba(29,45,39,.08); backdrop-filter: blur(10px); }
 .floating-note span { grid-row: span 2; color: var(--clay); font-family: Georgia, serif; font-size: 18px; }
@@ -420,6 +427,7 @@ button:focus-visible, a:focus-visible, input:focus-visible, textarea:focus-visib
   .quick-searches button:nth-of-type(n+3) { display: none; }
   .hero-visual { min-height: 380px; }
   .artisan-orbit { inset: -60px -30px -15px; }
+  .artisan-orbit-fallback { left: 50%; width: min(78vw,340px); }
   .floating-note { min-width: 105px; }
   .note-one { left: 0; }
   .trust-strip { grid-template-columns: 1fr 1fr; padding: 0; }

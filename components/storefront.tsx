@@ -1,7 +1,6 @@
 "use client";
 
 import { FormEvent, useEffect, useLayoutEffect, useMemo, useRef, useState } from "react";
-import { gsap } from "gsap";
 import dynamic from "next/dynamic";
 import {
   ArrowRight,
@@ -83,19 +82,38 @@ export function Storefront() {
   const [coupon, setCoupon] = useState("");
   const [couponApplied, setCouponApplied] = useState(false);
   const [notice, setNotice] = useState("");
+  const [enable3d, setEnable3d] = useState(false);
   const [inventory, setInventory] = useState<Record<string, number>>(
     Object.fromEntries(products.map((product) => [product.id, product.stock])),
   );
 
   useLayoutEffect(() => {
-    const context = gsap.context(() => {
-      const reduced = window.matchMedia("(prefers-reduced-motion: reduce)").matches;
-      if (reduced) return;
-      gsap.from(".hero-copy > *", { y: 28, opacity: 0, duration: 0.8, stagger: 0.09, ease: "power3.out" });
-      gsap.from(".hero-visual", { scale: 0.86, opacity: 0, rotate: 3, duration: 1.15, ease: "power3.out", delay: 0.15 });
-      gsap.from(".trust-item", { y: 16, opacity: 0, duration: 0.65, stagger: 0.08, delay: 0.65, ease: "power2.out" });
-    }, pageRef);
-    return () => context.revert();
+    let cancelled = false;
+    let animationContext: { revert: () => void } | null = null;
+    const reduced = window.matchMedia("(prefers-reduced-motion: reduce)").matches;
+    const compact = window.matchMedia("(max-width: 800px)").matches;
+    if (!reduced && !compact) {
+      void import("gsap").then(({ gsap }) => {
+        if (cancelled) return;
+        animationContext = gsap.context(() => {
+          gsap.from(".hero-copy > *", { y: 28, opacity: 0, duration: 0.8, stagger: 0.09, ease: "power3.out" });
+          gsap.from(".hero-visual", { scale: 0.86, opacity: 0, rotate: 3, duration: 1.15, ease: "power3.out", delay: 0.15 });
+          gsap.from(".trust-item", { y: 16, opacity: 0, duration: 0.65, stagger: 0.08, delay: 0.65, ease: "power2.out" });
+        }, pageRef);
+      });
+    }
+    return () => {
+      cancelled = true;
+      animationContext?.revert();
+    };
+  }, []);
+
+  useEffect(() => {
+    const media = window.matchMedia("(min-width: 801px) and (prefers-reduced-motion: no-preference)");
+    const update = () => setEnable3d(media.matches);
+    update();
+    media.addEventListener("change", update);
+    return () => media.removeEventListener("change", update);
   }, []);
 
   useEffect(() => {
@@ -249,7 +267,7 @@ export function Storefront() {
           </div>
           <div className="hero-visual">
             <div className="orbit-halo" />
-            <ArtisanOrbit />
+            {enable3d ? <ArtisanOrbit /> : <div className="artisan-orbit-fallback" aria-hidden="true"><span /><i /><b /></div>}
             <div className="floating-note note-one"><span>01</span><strong>modelat</strong><small>cu mâna</small></div>
             <div className="floating-note note-two"><span>02</span><strong>ales</strong><small>pentru tine</small></div>
             <p className="drag-hint">mișcă ușor cursorul <span>↗</span></p>
