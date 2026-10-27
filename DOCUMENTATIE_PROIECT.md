@@ -18,11 +18,11 @@ Rezultatul nu copiază interfața unui model; identitatea „Fir de Poveste”, 
 ## 4. Platforma software și tehnologiile
 
 - **Next.js 16 / React 19**, construit cu Vinext pentru rulare server-side pe Cloudflare Workers;
-- **Supabase** pentru PostgreSQL, comenzi și securitate Row Level Security atunci când sunt configurate credențialele;
+- **Supabase** pentru PostgreSQL, comenzi și profiluri de client, cu securitate Row Level Security atunci când sunt configurate credențialele;
 - **Three.js** pentru obiectul 3D interactiv din hero;
 - **GSAP** pentru animațiile de intrare;
 - **Stripe Checkout** în test mode atunci când este configurată cheia; sandbox local implicit pentru demonstrație;
-- CSS responsive, fără framework vizual greu.
+- fontul variabil **Oswald** livrat local, CSS responsive și paleta `#E2DBBE`, `#D5D6AA`, `#9DBBAE`, `#769FB6`, `#188FA7`.
 
 Next.js a fost ales pentru randare performantă, API routes și separarea codului client/server. Supabase oferă PostgreSQL administrat și politici de acces. Three.js și GSAP susțin elementul original, inspirat ca nivel de interactivitate de experiențele web ale lui Bruno Simon, fără a reproduce un proiect concret.
 
@@ -43,17 +43,18 @@ Provider: **ChatGPT Sites / Cloudflare Workers**. URL-ul public se completează 
 
 | Cerință | Implementare / loc de demonstrat |
 | --- | --- |
-| Navigare cu meniuri | Header responsive, ancore, meniu mobil |
-| Catalog de produse | Secțiunea „Obiecte cu rost” |
+| Navigare cu meniuri | Header responsive, meniu mobil și rute separate |
+| Catalog de produse | Pagina `/catalog`, cu URL de căutare partajabil |
 | Categorii | Ceramică, Textile, Lumânări, Bijuterii |
-| Detalii produs | Modal cu descriere, caracteristici, preț, imagine, rating și stoc |
-| Coș + actualizare | Drawer lateral, cantități, total, transport și persistență |
-| Înregistrarea comenzii | `/api/orders`, Supabase sau fallback local demonstrativ |
+| Detalii produs | Ruta `/produs/[id]`: galerie, caracteristici, atelier, îngrijire, rating, stoc, livrare și produse asociate |
+| Coș + actualizare | Pagina `/cos`, cantități, total, transport și persistență |
+| Cont utilizator | `/cont` → autentificare Sites → `/cont/profil`, profil, adresă, favorite și istoric |
+| Înregistrarea comenzii | `/api/orders`, legare opțională de cont, Supabase sau fallback local demonstrativ |
 | Stocuri | Stoc vizibil la produs și modificabil din panoul admin |
 | Promoții | Preț redus și codul `POVESTE10` |
 | Factură | Factură cu articole, cantități, prețuri, transport, reducere și TVA 19% |
 | Plată electronică | Stripe test mode sau sandbox local cu card `4242 4242 4242 4242` |
-| Administrare | Footer → „Administrare demo”: catalog, stocuri, comenzi, utilizatori |
+| Administrare | Ruta protejată `/admin`: catalog, stocuri, comenzi, utilizatori |
 
 ## 8. Personalizări și elemente de originalitate
 
@@ -61,9 +62,13 @@ Provider: **ChatGPT Sites / Cloudflare Workers**. URL-ul public se completează 
 
 Prima pagină pornește de la întrebarea „Ce ai vrea să găsești astăzi?”. Modulul interpretează expresii precum „un cadou de casă nouă sub 150 lei” și extrage automat bugetul, ocazia, categoria, materialul și urgența. Rezultatele sunt ordonate după relevanță și filtrele detectate sunt aplicate în catalog.
 
-### Scena 3D „firul de poveste”
+### Scena 3D „ceainicul atelierului”
 
-Un obiect tridimensional construit procedural dintr-un nucleu, fire, ac și talisman răspunde la cursor, are lumină caldă și o mișcare subtilă continuă. Este încărcat în browser și respectă preferința de reducere a animațiilor.
+Un ceainic ceramic imaginar este construit procedural din corp, capac, toartă, cioc, glazură, petale, ac și un fir curbat. Obiectul răspunde la cursor, plutește subtil și este completat de o secvență GSAP pentru intrarea elementelor. Randarea 3D este limitată la aproximativ 30 FPS, folosește un pixel ratio plafonat, se oprește când tabul nu este vizibil și este înlocuită de un fallback CSS pe ecrane mici sau în modul `prefers-reduced-motion`.
+
+### Fluxul complet de cont
+
+Magazinul folosește autentificarea securizată oferită de Sites, fără o parolă suplimentară stocată de proiect. După autentificare, clientul își completează telefonul, adresa și preferințele; datele se salvează în tabela `profiles` când Supabase este configurat și rămân demonstrabile local în lipsa credențialelor.
 
 ### Fluxul de încredere
 
@@ -71,20 +76,21 @@ Checkout-ul explică explicit mediul sandbox, comanda apare în administrare, ia
 
 ## 9. Scenariu recomandat pentru demonstrație
 
-1. Deschide pagina principală și mișcă cursorul peste obiectul 3D.
-2. Selectează exemplul „Un cadou de casă nouă sub 150 lei”.
-3. Modifică prețul maxim, materialul și filtrul de livrare.
-4. Deschide detaliile produsului „Cană Luna” și adaugă-l în coș.
-5. Aplică `POVESTE10` și modifică cantitatea.
-6. Continuă checkout-ul și folosește cardul `4242 4242 4242 4242`, expirare `12/34`, CVC `123`.
-7. Salvează factura ca PDF din dialogul final.
-8. Deschide „Administrare demo” și arată comanda și gestiunea stocului.
+1. Deschide homepage-ul și mișcă cursorul peste ceainicul 3D.
+2. Caută „Vreau un cadou cald pentru o prietenă, îi plac plantele, sub 150 lei și să ajungă repede”.
+3. Arată semnalele înțelese și motivele potrivirii în `/catalog`, apoi modifică filtrele.
+4. Deschide pagina produsului „Ierbar de câmp” și prezintă galeria, atelierul, stocul și livrarea.
+5. Creează/autentifică un cont, completează profilul și adresa implicită.
+6. Adaugă produsul în coș, aplică `POVESTE10` și modifică cantitatea.
+7. Continuă checkout-ul și folosește cardul `4242 4242 4242 4242`, expirare `12/34`, CVC `123`.
+8. Tipărește factura, verifică istoricul din cont și apoi ruta `/admin`.
 
 ## 10. Capturi de ecran necesare pentru predare
 
 - homepage și căutarea în limbaj natural;
 - rezultatele filtrate și catalogul pe categorii;
-- modalul cu detalii produs;
+- pagina individuală de detalii produs;
+- creare cont, profil și adresă;
 - coșul și actualizarea cantității;
 - promoția `POVESTE10`;
 - checkout-ul sandbox cu datele de test vizibile;
@@ -96,9 +102,9 @@ Checkout-ul explică explicit mediul sandbox, comanda apare în administrare, ia
 
 - imagini de produs redimensionate și comprimate;
 - imagini sub fold încărcate cu `loading="lazy"`;
-- scena Three.js încărcată dinamic;
+- scena Three.js încărcată dinamic, plafonată la aproximativ 30 FPS și suspendată în taburile ascunse;
 - animațiile respectă `prefers-reduced-motion`;
-- fără fonturi sau scripturi externe care blochează randarea;
+- Oswald este servit local, fără cereri Google Fonts la runtime;
 - layout responsive și elemente accesibile din tastatură.
 
 Pentru captura cerută: deschide `https://pagespeed.web.dev/`, introdu URL-ul public și salvează ecranul cu rezultatele Mobile și Desktop.
@@ -115,4 +121,4 @@ Raport salvat: [PageSpeed Insights — Fir de Poveste](https://pagespeed.web.dev
 
 ## 12. Limitări și trecerea la producție
 
-Produsele, clienții și firma din demo sunt fictive. Pentru producție sunt necesare: configurarea proiectului Supabase, chei Stripe test/live, pagini juridice, politici de retur, webhook Stripe pentru confirmarea server-side și un sistem de autentificare. Nicio cheie secretă nu trebuie comisă în repository.
+Produsele, clienții și firma din demo sunt fictive. Pentru producție sunt necesare: configurarea proiectului Supabase, chei Stripe test/live, validarea juridică a termenilor și politicilor, webhook Stripe pentru confirmarea server-side și notificări tranzacționale. Autentificarea contului este deja delegată mecanismului securizat Sites. Nicio cheie secretă nu trebuie comisă în repository.

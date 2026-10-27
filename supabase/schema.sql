@@ -18,13 +18,32 @@ create table if not exists public.orders (
   total integer not null check (total >= 0),
   payment_id text,
   status text not null default 'pending',
+  user_id text,
   created_at timestamptz not null default now()
+);
+
+alter table public.orders add column if not exists user_id text;
+
+create table if not exists public.profiles (
+  user_id text primary key,
+  email text not null,
+  name text not null,
+  phone text not null default '',
+  address text not null default '',
+  city text not null default '',
+  county text not null default '',
+  postal_code text not null default '',
+  newsletter boolean not null default false,
+  gifts boolean not null default false,
+  updated_at timestamptz not null default now()
 );
 
 alter table public.products enable row level security;
 alter table public.orders enable row level security;
+alter table public.profiles enable row level security;
 
 create policy "products are publicly readable"
 on public.products for select using (true);
 
 -- Inserările de comenzi se fac numai server-side cu service role.
+-- Profilurile se citesc și se actualizează numai server-side, după identitatea Sites.

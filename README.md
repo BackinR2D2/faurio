@@ -4,13 +4,16 @@ Magazin B2C demonstrativ pentru produse handmade, construit cu Next.js 16 (Vinex
 
 ## Funcționalități
 
-- căutare în limbaj natural cu interpretare de buget, categorie, ocazie, material și timp de livrare;
-- catalog responsive cu categorii și filtre avansate;
-- pagină de detaliu, stoc, promoții, favorite și coș persistent;
+- homepage concentrat exclusiv pe căutarea în limbaj natural și o scenă 3D procedurală;
+- interpretare explicabilă de buget, categorie, ocazie, destinatar, interese, atmosferă, culoare, material și urgență;
+- catalog multipagină cu filtre avansate și pagini individuale complete pentru fiecare produs;
+- cont de client prin identitatea securizată Sites, profil, adresă, preferințe, favorite și istoric de comenzi;
+- coș și favorite persistente între pagini;
 - cod promoțional `POVESTE10`;
 - checkout electronic sandbox cu cardul de test `4242 4242 4242 4242`;
 - înregistrarea comenzii, emiterea facturii și tipărire/salvare PDF;
-- interfață de administrare demonstrativă pentru produse, stocuri, comenzi și utilizatori;
+- pagini separate pentru jurnal, contact, poveste, livrare și retur, termeni și confidențialitate;
+- interfață de administrare protejată pentru produse, stocuri, comenzi și utilizatori;
 - experiență 3D Three.js și tranziții GSAP, cu suport pentru `prefers-reduced-motion`;
 - API routes server-side pentru căutare, comenzi și inițializarea plății.
 
@@ -40,11 +43,15 @@ Fără aceste valori, site-ul rulează în demo mode: catalogul este seed-uit î
 
 ## Structură relevantă
 
-- `components/storefront.tsx` — experiența B2C completă;
+- `components/home-search.tsx` — homepage-ul și redirecționarea către catalog;
+- `components/catalog-view.tsx` și `components/product-detail.tsx` — cumpărături multipagină;
+- `components/shop-provider.tsx` — coș și favorite partajate;
+- `components/account-profile.tsx` — profilul contului de client;
 - `components/artisan-orbit.tsx` — scena Three.js interactivă;
 - `lib/catalog.ts` — catalog și motorul de interpretare a căutării;
 - `app/api/checkout/route.ts` — Stripe Checkout sau sandbox;
 - `app/api/orders/route.ts` — persistență Supabase cu fallback demo;
+- `app/api/profile/route.ts` — profiluri Supabase legate de identitatea securizată;
 - `supabase/schema.sql` — schema bazei de date;
 - `DOCUMENTATIE_PROIECT.md` — documentația cerută pentru susținere.
 

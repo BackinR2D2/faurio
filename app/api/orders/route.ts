@@ -1,4 +1,5 @@
 import { getSupabaseAdmin } from "@/lib/supabase-server";
+import { getChatGPTUser } from "@/app/chatgpt-auth";
 
 export async function POST(request: Request) {
   const body = (await request.json()) as {
@@ -8,6 +9,7 @@ export async function POST(request: Request) {
     paymentId?: string;
   };
   const orderCode = `FDP-${new Date().getFullYear()}-${crypto.randomUUID().slice(0, 6).toUpperCase()}`;
+  const user = await getChatGPTUser();
   const supabase = getSupabaseAdmin();
 
   if (supabase) {
@@ -20,6 +22,7 @@ export async function POST(request: Request) {
       total: Number(body.total || 0),
       payment_id: String(body.paymentId || ""),
       status: "paid",
+      user_id: user?.userId || null,
     });
     if (error) return Response.json({ error: error.message }, { status: 500 });
   }

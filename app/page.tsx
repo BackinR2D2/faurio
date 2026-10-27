@@ -1,5 +1,5 @@
-import { Storefront } from "@/components/storefront";
+import { HomeSearch } from "@/components/home-search";
 
 export default function Home() {
-  return <Storefront />;
+  return <HomeSearch />;
 }
