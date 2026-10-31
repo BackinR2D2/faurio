@@ -2,6 +2,8 @@
 
 Magazin B2C pentru produse handmade, în evoluție către un marketplace cu ateliere independente. Next.js, React, Supabase, Three.js, GSAP și Stripe.
 
+Pilot public, plăți exclusiv TEST: [faurio-marketplace.netlify.app](https://faurio-marketplace.netlify.app). Stare și limitări: [activarea serviciilor](docs/ACTIVATION-STATUS.md). Emailurile și onboardingul vânzătorilor nu sunt încă validate end-to-end.
+
 ## Emailuri și identitate
 
 Identitate Faurio, logo SVG și favicon în `public/brand` și `public/favicon.svg`. Confirmarea contului folosește Supabase Auth cu SMTP configurat în dashboard. Confirmarea comenzilor achitate folosește Gmail SMTP pentru POC sau Resend API, printr-un outbox privat; livrările SMTP incerte nu sunt reîncercate orbește. [Configurare completă, diagnosticarea erorii 500 și activarea emailurilor](docs/EMAIL-SETUP.md). `npm run email:check` nu trimite mesaje; `npm run email:dispatch` procesează notificările eligibile. Vezi [Gmail fără domeniu](docs/GMAIL-POC.md). SMTP Supabase și transportul aplicației se configurează separat; migrarea outbox este obligatorie.

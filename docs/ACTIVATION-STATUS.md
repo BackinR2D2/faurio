@@ -34,9 +34,15 @@ Au fost create două webhook-uri Stripe TEST pentru `https://faurio-marketplace.
 
 Repository privat creat: [BackinR2D2/faurio](https://github.com/BackinR2D2/faurio). Remote-ul `origin` este configurat. Fișierele de mediu și documentul local de instrucțiuni sunt excluse din Git. Scanarea surselor și a istoricului nu a găsit credențialele curente sau tiparele de chei private verificate; aceasta nu constituie un audit independent complet.
 
-Contul Netlify a fost autorizat și planul Free confirmat. Proiectul `faurio-marketplace` este creat și legat prin CLI de repository-ul privat, cu o cheie SSH read-only pentru acel repository și un webhook GitHub pentru evenimente push. URL rezervat: `https://faurio-marketplace.netlify.app`. Variabilele serviciilor au fost copiate după acord explicit, exclusiv în contextul production; nu au fost configurate secrete pentru previews. Primul deploy este încă de verificat; un URL rezervat nu este dovada unui deploy funcțional.
+Contul Netlify a fost autorizat și planul Free confirmat. Proiectul `faurio-marketplace` este creat și legat prin CLI de repository-ul privat, cu o cheie SSH read-only pentru acel repository și un webhook GitHub pentru evenimente push. Site public verificat: [faurio-marketplace.netlify.app](https://faurio-marketplace.netlify.app). Variabilele serviciilor au fost copiate după acord explicit, exclusiv în contextul production; nu au fost configurate secrete pentru previews.
+
+Netlify a publicat automat commitul aplicației `5316793`; webhook-ul GitHub push a primit HTTP 204, iar deploy-ul a ajuns în starea `ready`. Cele patru teste HTTPS desktop/mobil de producție au trecut, inclusiv pagini, layout fără overflow, căutare, paginare și refuzul accesului anonim. Cele trei căutări din tabel au fost repetate pe URL-ul public cu `engine: groq`, aceleași rezultate și constrângeri verificate.
+
+Ambele endpointuri Stripe publice au acceptat probe sintetice semnate (HTTP 200) și au refuzat probe nesemnate (HTTP 400). Evenimentele sintetice au un tip necunoscut, ignorat de aplicație: nu s-au creat comenzi/plăți și nu reprezintă dovada livrării unui eveniment real de la Stripe.
 
 Primul GitHub CI a trecut build/typecheck/lint/testele unitare, dar a identificat două teste UI care presupuneau existența cheilor Stripe/DB în CI. Testul a fost corectat pentru a verifica butonul dezactivat în mediul neconfigurat, fără a introduce chei reale sau bypass în aplicație. Fluxul mock complet rămâne verificat local, unde configurația backend există. Verificările pe catalogul real sunt omise explicit în CI fără staging securizat.
+
+Pipeline-ul corectat a trecut în GitHub Actions: [run 41233600320](https://github.com/BackinR2D2/faurio/actions/runs/41233600320). Corecția checkout-ului a fost verificată separat desktop/mobil atât cu configurația backend locală, cât și pe un server QA izolat fără chei.
 
 ## Verificări de cod
 
