@@ -1,0 +1,170 @@
+[
+  {
+    "slug": "cana-luna",
+    "label": "Cană Luna",
+    "productType": "Cană",
+    "src": "/products/catalog/cana-luna.webp",
+    "origin": "generated-demo"
+  },
+  {
+    "slug": "ceasca-zori",
+    "label": "Ceașcă Zori",
+    "productType": "Ceașcă",
+    "src": "/products/catalog/ceasca-zori.webp",
+    "origin": "generated-demo"
+  },
+  {
+    "slug": "vaza-pamant",
+    "label": "Vază Pământ",
+    "productType": "Vază",
+    "src": "/products/catalog/vaza-pamant.webp",
+    "origin": "generated-demo"
+  },
+  {
+    "slug": "vaza-indigo",
+    "label": "Vază Indigo",
+    "productType": "Vază",
+    "src": "/products/catalog/vaza-indigo.webp",
+    "origin": "generated-demo"
+  },
+  {
+    "slug": "bol-nisip",
+    "label": "Bol Nisip",
+    "productType": "Bol",
+    "src": "/products/catalog/bol-nisip.webp",
+    "origin": "generated-demo"
+  },
+  {
+    "slug": "farfurie-floare",
+    "label": "Farfurie Floare",
+    "productType": "Farfurie",
+    "src": "/products/catalog/farfurie-floare.webp",
+    "origin": "generated-demo"
+  },
+  {
+    "slug": "pahar-prisma",
+    "label": "Pahar Prismă",
+    "productType": "Pahar",
+    "src": "/products/catalog/pahar-prisma.webp",
+    "origin": "generated-demo"
+  },
+  {
+    "slug": "set-pahare-rau",
+    "label": "Set de pahare Râu",
+    "productType": "Set de pahare",
+    "src": "/products/catalog/set-pahare-rau.webp",
+    "origin": "generated-demo"
+  },
+  {
+    "slug": "pahar-onda",
+    "label": "Pahar Ondă",
+    "productType": "Pahar",
+    "src": "/products/catalog/pahar-onda.webp",
+    "origin": "generated-demo"
+  },
+  {
+    "slug": "broderie-ierbar",
+    "label": "Ierbar de câmp",
+    "productType": "Broderie",
+    "src": "/products/catalog/broderie-ierbar.webp",
+    "origin": "generated-demo"
+  },
+  {
+    "slug": "perna-apus",
+    "label": "Pernă Apus",
+    "productType": "Pernă",
+    "src": "/products/catalog/perna-apus.webp",
+    "origin": "generated-demo"
+  },
+  {
+    "slug": "patura-molid",
+    "label": "Pătură Molid",
+    "productType": "Pătură",
+    "src": "/products/catalog/patura-molid.webp",
+    "origin": "generated-demo"
+  },
+  {
+    "slug": "lumanare-chihlimbar",
+    "label": "Lumânare Chihlimbar",
+    "productType": "Lumânare",
+    "src": "/products/catalog/lumanare-chihlimbar.webp",
+    "origin": "generated-demo"
+  },
+  {
+    "slug": "lumanare-smochin",
+    "label": "Lumânare Smochin",
+    "productType": "Lumânare",
+    "src": "/products/catalog/lumanare-smochin.webp",
+    "origin": "generated-demo"
+  },
+  {
+    "slug": "suport-arc",
+    "label": "Suport Arc",
+    "productType": "Suport de lumânare",
+    "src": "/products/catalog/suport-arc.webp",
+    "origin": "generated-demo"
+  },
+  {
+    "slug": "colier-roua",
+    "label": "Colier Rouă",
+    "productType": "Colier",
+    "src": "/products/catalog/colier-roua.webp",
+    "origin": "generated-demo"
+  },
+  {
+    "slug": "cercei-frunza",
+    "label": "Cercei Frunză",
+    "productType": "Cercei",
+    "src": "/products/catalog/cercei-frunza.webp",
+    "origin": "generated-demo"
+  },
+  {
+    "slug": "bratara-fir",
+    "label": "Brățară Fir",
+    "productType": "Brățară",
+    "src": "/products/catalog/bratara-fir.webp",
+    "origin": "generated-demo"
+  },
+  {
+    "slug": "cutie-nuc",
+    "label": "Cutie Nuc",
+    "productType": "Cutie",
+    "src": "/products/catalog/cutie-nuc.webp",
+    "origin": "generated-demo"
+  },
+  {
+    "slug": "tava-nord",
+    "label": "Tavă Nord",
+    "productType": "Tavă",
+    "src": "/products/catalog/tava-nord.webp",
+    "origin": "generated-demo"
+  },
+  {
+    "slug": "rama-feriga",
+    "label": "Ramă Ferigă",
+    "productType": "Ramă",
+    "src": "/products/catalog/rama-feriga.webp",
+    "origin": "generated-demo"
+  },
+  {
+    "slug": "decor-luna",
+    "label": "Decorațiune Lună",
+    "productType": "Decorațiune",
+    "src": "/products/catalog/decor-luna.webp",
+    "origin": "generated-demo"
+  },
+  {
+    "slug": "jurnal-herbarium",
+    "label": "Jurnal Herbarium",
+    "productType": "Jurnal",
+    "src": "/products/catalog/jurnal-herbarium.webp",
+    "origin": "generated-demo"
+  },
+  {
+    "slug": "semn-tei",
+    "label": "Semn de carte Tei",
+    "productType": "Semn de carte",
+    "src": "/products/catalog/semn-tei.webp",
+    "origin": "generated-demo"
+  }
+]

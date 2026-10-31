@@ -1,57 +1,66 @@
 "use client";
 
-import { FormEvent, useMemo, useState } from "react";
+import { FormEvent, useState, useTransition } from "react";
+import Link from "next/link";
 import { useRouter } from "next/navigation";
-import { Check, Search, SlidersHorizontal, Sparkles, X } from "lucide-react";
-import { categories, interpretNaturalQuery, money, products } from "@/lib/catalog";
+import { Check, ChevronLeft, ChevronRight, Search, SlidersHorizontal, Sparkles, X } from "lucide-react";
+import { categories, materials, money, type CatalogFilters } from "@/lib/catalog";
+import type { CatalogResult } from "@/lib/products";
 import { ProductCard } from "@/components/product-card";
 
-export function CatalogView({ initialQuery = "" }: { initialQuery?: string }) {
+type Props = CatalogResult & { initialQuery: string; filters: CatalogFilters };
+
+export function CatalogView({ products, total, page, pageCount, configured, intent, initialQuery, filters }: Props) {
   const router = useRouter();
-  const semantic = useMemo(() => initialQuery ? interpretNaturalQuery(initialQuery) : null, [initialQuery]);
-  const [draft, setDraft] = useState(initialQuery);
-  const [category, setCategory] = useState(semantic?.filters.category || "Toate");
-  const [maxPrice, setMaxPrice] = useState(Math.min(250, semantic?.filters.maxPrice || 250));
-  const [material, setMaterial] = useState("Toate");
-  const [ready, setReady] = useState(Boolean(semantic?.filters.ready));
-  const [rating, setRating] = useState(0);
-  const [sort, setSort] = useState("relevanta");
+  const [pending, startTransition] = useTransition();
   const [mobileFilters, setMobileFilters] = useState(false);
+  const priceLimit = intent?.filters.maxPrice ?? 400;
+  const selectedPrice = Math.min(filters.maxPrice ?? priceLimit, priceLimit);
 
-  const result = useMemo(() => {
-    const rank = semantic?.ids || products.map((product) => product.id);
-    return products.filter((product) => rank.includes(product.id))
-      .filter((product) => category === "Toate" || product.category === category)
-      .filter((product) => product.price <= maxPrice)
-      .filter((product) => material === "Toate" || product.material.includes(material))
-      .filter((product) => !ready || product.days <= 2)
-      .filter((product) => product.rating >= rating)
-      .sort((a, b) => sort === "pret-mic" ? a.price - b.price : sort === "pret-mare" ? b.price - a.price : sort === "rating" ? b.rating - a.rating : rank.indexOf(a.id) - rank.indexOf(b.id));
-  }, [category, material, maxPrice, rating, ready, semantic, sort]);
+  const href = (patch: Record<string, string | number | boolean | undefined>) => {
+    const params = new URLSearchParams();
+    const current: Record<string, string | number | boolean | undefined> = { q: initialQuery, categorie: filters.category, material: filters.material, pret: filters.maxPrice, rating: filters.minRating, rapid: filters.ready, sort: filters.sort, page };
+    Object.entries(current).forEach(([key, value]) => {
+      if (value !== undefined && value !== "" && value !== false && value !== "Toate" && value !== 0) params.set(key, String(value));
+    });
+    Object.entries(patch).forEach(([key, value]) => {
+      if (value === undefined || value === "" || value === false || value === "Toate" || value === 0) params.delete(key);
+      else params.set(key, String(value));
+    });
+    if (!("page" in patch)) params.delete("page");
+    const query = params.toString();
+    return `/catalog${query ? `?${query}` : ""}`;
+  };
 
-  const search = (event: FormEvent) => { event.preventDefault(); if (draft.trim()) router.push(`/catalog?q=${encodeURIComponent(draft.trim())}`); };
-  const reset = () => { setCategory("Toate"); setMaxPrice(250); setMaterial("Toate"); setReady(false); setRating(0); router.push("/catalog"); };
+  const navigate = (patch: Record<string, string | number | boolean | undefined>) => startTransition(() => router.push(href(patch)));
+  const search = (event: FormEvent<HTMLFormElement>) => {
+    event.preventDefault();
+    const data = new FormData(event.currentTarget);
+    navigate({ q: String(data.get("q") || "").trim(), page: undefined });
+  };
+  const visiblePages = Array.from({ length: pageCount }, (_, index) => index + 1).filter((value) => value === 1 || value === pageCount || Math.abs(value - page) <= 2);
 
-  return <main className="page-main catalog-page">
+  return <main className={`page-main catalog-page${pending ? " is-loading" : ""}`}>
     <section className="catalog-head">
-      <div><p className="eyebrow">Catalog curatorial</p><h1>{semantic ? "Am găsit câteva potriviri" : "Obiecte cu rost"}</h1><p>{semantic ? "Am citit întreaga descriere și am ordonat produsele după intenție, buget, stil și timp de livrare." : "Piese lucrate încet, în loturi mici, de ateliere din România."}</p></div>
-      <form className="catalog-search" onSubmit={search}><Search /><input value={draft} onChange={(event) => setDraft(event.target.value)} placeholder="Descrie din nou ce cauți..." /><button>Caută</button></form>
-      {semantic && <div className="understanding"><Sparkles /><span><small>Am înțeles</small><strong>{semantic.summary.length ? semantic.summary.join(" · ") : "un obiect handmade cu personalitate"}</strong></span><button onClick={reset} aria-label="Șterge căutarea"><X /></button></div>}
+      <div><p className="eyebrow">Catalog</p><h1>{intent ? "Potriviri precise" : "Obiecte cu rost"}</h1><p>{intent ? "Rezultate din catalog, fără completări aproximative." : "Serii mici, făcute local."}</p></div>
+      <form className="catalog-search" onSubmit={search}><Search /><input name="q" maxLength={1200} aria-label="Caută în catalog" defaultValue={initialQuery} placeholder="Ce cauți? Poți scrie o propoziție." /><button>Caută</button></form>
+      {intent && <div className="understanding"><Sparkles /><span><small>{intent.engine === "groq" ? "Interpretat cu AI · verificat în catalog" : "Filtre exacte"}</small><strong>{intent.summary.length ? intent.summary.join(" · ") : `căutare exactă: ${initialQuery}`}</strong></span><Link href="/catalog" aria-label="Șterge căutarea"><X /></Link></div>}
+      {intent?.notice && <p className="form-notice" role="status">{intent.notice}</p>}
     </section>
 
-    <div className="category-row">{categories.map((item) => <button key={item} className={category === item ? "active" : ""} onClick={() => setCategory(item)}>{item}</button>)}<button className="mobile-filter" onClick={() => setMobileFilters(true)}><SlidersHorizontal /> Filtre</button></div>
+    <div className="category-row">{categories.map((item) => <button key={item} className={(filters.category || "Toate") === item ? "active" : ""} onClick={() => navigate({ categorie: item })}>{item}</button>)}<button className="mobile-filter" onClick={() => setMobileFilters(true)}><SlidersHorizontal /> Filtre</button></div>
     <section className="catalog-body">
-      <aside className={`filter-panel ${mobileFilters ? "open" : ""}`}>
-        <div className="filter-heading"><strong>Filtre precise</strong><button onClick={() => setMobileFilters(false)}><X /></button></div>
-        <label className="range-filter"><span>Preț maxim <b>{money.format(maxPrice)}</b></span><input type="range" min="70" max="250" step="10" value={maxPrice} onChange={(event) => setMaxPrice(Number(event.target.value))} /></label>
-        <fieldset><legend>Material</legend>{["Toate", "ceramică", "in", "ceară de soia", "compozit mineral"].map((item) => <label key={item}><input type="radio" name="material" checked={material === item} onChange={() => setMaterial(item)} /><span>{item}</span></label>)}</fieldset>
-        <fieldset><legend>Rating minim</legend>{[0, 4.8, 4.9].map((value) => <label key={value}><input type="radio" name="rating" checked={rating === value} onChange={() => setRating(value)} /><span>{value ? `${value}+ stele` : "Orice rating"}</span></label>)}</fieldset>
-        <label className="check-filter"><input type="checkbox" checked={ready} onChange={(event) => setReady(event.target.checked)} /><i>{ready && <Check />}</i><span><strong>Livrare rapidă</strong><small>expediere în maximum 2 zile</small></span></label>
-        <button className="reset-link" onClick={reset}>Resetează toate filtrele</button>
+      <aside className={`filter-panel${mobileFilters ? " open" : ""}`}>
+        <div className="filter-heading"><strong>Filtre precise</strong><button onClick={() => setMobileFilters(false)} aria-label="Închide filtrele"><X /></button></div>
+        <label className="range-filter"><span>Preț maxim <b>{money.format(selectedPrice)}</b></span><input type="range" min="0" max={Math.max(1, priceLimit)} step="1" value={selectedPrice} onChange={(event) => navigate({ pret: Number(event.target.value) === priceLimit ? undefined : event.target.value })} /></label>
+        <fieldset><legend>Material</legend>{materials.map((item) => <label key={item}><input type="radio" name="material" checked={(filters.material || "Toate") === item} onChange={() => navigate({ material: item })} /><span>{item}</span></label>)}</fieldset>
+        <fieldset><legend>Rating minim</legend>{[0, 4.5, 4.7, 4.9].map((value) => <label key={value}><input type="radio" name="rating" checked={(filters.minRating || 0) === value} onChange={() => navigate({ rating: value })} /><span>{value ? `${value}+ stele` : "Orice rating"}</span></label>)}</fieldset>
+        <label className="check-filter"><input type="checkbox" checked={Boolean(filters.ready)} onChange={(event) => navigate({ rapid: event.target.checked })} /><i>{filters.ready && <Check />}</i><span><strong>Livrare rapidă</strong><small>expediere în maximum 2 zile</small></span></label>
+        <Link className="reset-link" href={initialQuery ? `/catalog?q=${encodeURIComponent(initialQuery)}` : "/catalog"}>Resetează filtrele</Link>
       </aside>
       <div className="catalog-results">
-        <div className="result-toolbar"><span>{result.length} {result.length === 1 ? "produs" : "produse"}</span><label>Ordonează <select value={sort} onChange={(event) => setSort(event.target.value)}><option value="relevanta">Relevanță</option><option value="pret-mic">Preț crescător</option><option value="pret-mare">Preț descrescător</option><option value="rating">Rating</option></select></label></div>
-        {result.length ? <div className="product-grid">{result.map((product, index) => <ProductCard key={product.id} product={product} reasons={semantic?.reasons[product.id]} priority={index < 3} />)}</div> : <div className="empty-state"><Search /><h2>Nicio potrivire exactă</h2><p>Mărește bugetul sau elimină un filtru pentru a vedea mai multe obiecte.</p><button onClick={reset}>Arată tot catalogul</button></div>}
+        <div className="result-toolbar"><span>{total} {total === 1 ? "produs" : "produse"}</span><label>Ordonează <select value={filters.sort || "relevanta"} onChange={(event) => navigate({ sort: event.target.value })}><option value="relevanta">Relevanță</option><option value="pret-mic">Preț crescător</option><option value="pret-mare">Preț descrescător</option><option value="rating">Rating</option><option value="nou">Cele mai noi</option></select></label></div>
+        {!configured ? <div className="empty-state"><Search /><h2>Conectează baza de date</h2><p>Configurează variabilele Supabase și rulează schema plus seed-ul pentru a încărca cele 720 de produse.</p></div> : products.length ? <><div className="product-grid">{products.map((product, index) => <ProductCard key={product.id} product={product} reasons={intent?.summary.slice(0, 2)} priority={index < 3} />)}</div>{pageCount > 1 && <nav className="catalog-pagination" aria-label="Pagini catalog"><Link className={page <= 1 ? "disabled" : ""} href={href({ page: Math.max(1, page - 1) })} aria-label="Pagina anterioară"><ChevronLeft /></Link>{visiblePages.map((value, index) => <span key={value}>{index > 0 && value - visiblePages[index - 1] > 1 && <i>…</i>}<Link className={value === page ? "active" : ""} href={href({ page: value })}>{value}</Link></span>)}<Link className={page >= pageCount ? "disabled" : ""} href={href({ page: Math.min(pageCount, page + 1) })} aria-label="Pagina următoare"><ChevronRight /></Link></nav>}</> : <div className="empty-state"><Search /><h2>Nicio potrivire exactă</h2><p>Nu avem acum un produs care să respecte cererea. Reformulează căutarea sau elimină un filtru.</p><Link className="primary-button" href="/catalog">Vezi întregul catalog</Link></div>}
       </div>
     </section>
   </main>;

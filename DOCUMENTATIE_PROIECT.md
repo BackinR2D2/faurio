@@ -1,124 +1,113 @@
-# Documentație proiect — Fir de Poveste
+# Documentație proiect — Faurio
+
+> Actualizare 30 octombrie 2026: textul de mai jos descrie etapa inițială, administrată central. Cerința nouă este un marketplace. Starea verificată, limitele și dovezile actuale sunt în [docs/ST3-PRESENTATION.md](docs/ST3-PRESENTATION.md) și [docs/TEST-REPORT.md](docs/TEST-REPORT.md). Referințele istorice la factură nu certifică un document fiscal românesc; Connect și plățile către creatori nu sunt încă finalizate.
 
 ## 1. Tipul de comerț electronic
 
-**B2C (Business-to-Consumer)**, sub forma unui marketplace curatorial care prezintă și comercializează obiecte handmade către clientul final.
+Proiectul este un magazin **B2C**, prin care obiectele handmade sunt comercializate direct către clientul final.
 
-## 2. Produsele comercializate și motivația alegerii
+## 2. Produsele și motivația alegerii
 
-Catalogul demonstrativ cuprinde ceramică, broderii și textile, lumânări din ceară vegetală și obiecte decorative realizate în serie mică. Segmentul handmade este potrivit proiectului deoarece alegerea produsului depinde de intenție, poveste, material, buget și timpul de livrare — criterii pe care căutarea conversațională le poate interpreta mai natural decât un formular clasic.
+Catalogul include ceramică, textile, lumânări, bijuterii și decorațiuni realizate în serie mică. Alegerea unui produs handmade depinde de intenție, ocazie, material, buget și timpul de livrare. Din acest motiv, proiectul folosește o căutare conversațională care transformă o descriere liberă în recomandări concrete din catalog.
 
 ## 3. Modele de referință
 
-- **Etsy** pentru structurarea marketplace-ului, căutare, categorii, favorite și încrederea acordată creatorului;
-- magazine editoriale de design și obiect, pentru compoziția aerisită, fotografia de produs și modul de prezentare a atelierelor.
+- Etsy pentru catalog, categorii, favorite și prezentarea creatorilor;
+- magazine editoriale de design pentru compoziția aerisită și fotografia de produs;
+- experiențe web interactive pentru mișcarea discretă a scenei 3D.
 
-Rezultatul nu copiază interfața unui model; identitatea „Fir de Poveste”, firul 3D interactiv, căutarea centrată pe intenție și limbajul vizual sunt originale.
+Identitatea vizuală, selecția și integrarea obiectelor 3D, motorul de recomandare și fluxurile magazinului sunt realizate pentru acest proiect.
 
-## 4. Platforma software și tehnologiile
+## 4. Tehnologii
 
-- **Next.js 16 / React 19**, construit cu Vinext pentru rulare server-side pe Cloudflare Workers;
-- **Supabase** pentru PostgreSQL, comenzi și profiluri de client, cu securitate Row Level Security atunci când sunt configurate credențialele;
-- **Three.js** pentru obiectul 3D interactiv din hero;
-- **GSAP** pentru animațiile de intrare;
-- **Stripe Checkout** în test mode atunci când este configurată cheia; sandbox local implicit pentru demonstrație;
-- fontul variabil **Oswald** livrat local, CSS responsive și paleta `#E2DBBE`, `#D5D6AA`, `#9DBBAE`, `#769FB6`, `#188FA7`.
+- Next.js 16 și React 19;
+- TypeScript, TSX și CSS;
+- Supabase Auth și PostgreSQL cu Row Level Security;
+- Three.js pentru scena 3D;
+- GSAP pentru animații;
+- Stripe Checkout în test mode;
+- Oswald Variable servit local;
+- paleta `#E2DBBE`, `#D5D6AA`, `#9DBBAE`, `#769FB6`, `#188FA7`.
 
-Next.js a fost ales pentru randare performantă, API routes și separarea codului client/server. Supabase oferă PostgreSQL administrat și politici de acces. Three.js și GSAP susțin elementul original, inspirat ca nivel de interactivitate de experiențele web ale lui Bruno Simon, fără a reproduce un proiect concret.
+Next.js separă paginile, componentele client și rutele server. Supabase asigură autentificarea și baza de date, iar Stripe oferă fluxul de plată electronică testabil.
 
-## 5. Limbaje și baze de date
+## 5. Baza de date
 
-- TypeScript, TSX, CSS și SQL;
-- PostgreSQL prin Supabase (`supabase/schema.sql`);
-- comenzile sunt inserate exclusiv server-side cu service role; cheia nu ajunge în browser;
-- versiunea demo folosește localStorage doar ca fallback evaluabil atunci când nu există credențiale externe.
+Schema din `supabase/schema.sql` conține produse, profiluri, comenzi, mesaje de contact și abonați la newsletter. Profilurile și comenzile sunt asociate utilizatorului autentificat. Politicile RLS limitează accesul clientului la propriile date, iar operațiile administrative folosesc cheia server-side.
 
 ## 6. Publicare
 
-Provider: **ChatGPT Sites / Cloudflare Workers**. URL-ul public se completează după publicare:
-
-`https://fir-de-poveste-handmade.elatedpine3.chatgpt.site`
+Aplicația este pregătită pentru Vercel sau Netlify. După conectarea repository-ului sunt adăugate variabilele din `.env.example`, iar `NEXT_PUBLIC_SITE_URL` primește domeniul final. Redirecturile de autentificare trebuie permise în Supabase.
 
 ## 7. Cerințe B2C implementate
 
-| Cerință | Implementare / loc de demonstrat |
+| Cerință | Implementare |
 | --- | --- |
-| Navigare cu meniuri | Header responsive, meniu mobil și rute separate |
-| Catalog de produse | Pagina `/catalog`, cu URL de căutare partajabil |
-| Categorii | Ceramică, Textile, Lumânări, Bijuterii |
-| Detalii produs | Ruta `/produs/[id]`: galerie, caracteristici, atelier, îngrijire, rating, stoc, livrare și produse asociate |
-| Coș + actualizare | Pagina `/cos`, cantități, total, transport și persistență |
-| Cont utilizator | `/cont` → autentificare Sites → `/cont/profil`, profil, adresă, favorite și istoric |
-| Înregistrarea comenzii | `/api/orders`, legare opțională de cont, Supabase sau fallback local demonstrativ |
-| Stocuri | Stoc vizibil la produs și modificabil din panoul admin |
-| Promoții | Preț redus și codul `POVESTE10` |
-| Factură | Factură cu articole, cantități, prețuri, transport, reducere și TVA 19% |
-| Plată electronică | Stripe test mode sau sandbox local cu card `4242 4242 4242 4242` |
-| Administrare | Ruta protejată `/admin`: catalog, stocuri, comenzi, utilizatori |
+| Navigare | Header responsive, meniu mobil și pagini separate |
+| Catalog | `/catalog`, căutare, filtre și sortare |
+| Categorii | Ceramică, textile, lumânări, bijuterii și decorațiuni |
+| Detalii produs | `/produs/[id]`, galerie, preț, stoc, creator, livrare și produse asociate |
+| Coș | `/cos`, cantități, eliminare, transport, promoție și persistență |
+| Cont | `/cont`, creare cont, autentificare, resetare parolă și profil |
+| Comenzi | create exclusiv după confirmarea Stripe, cu istoric asociat utilizatorului |
+| Stocuri | Stoc afișat la produs și gestionat în `/admin` |
+| Promoții | Prețuri promoționale și codul `POVESTE10` |
+| Factură | Articole, cantități, prețuri, transport, reducere, TVA și tipărire |
+| Plată | Stripe Checkout găzduit, confirmare server-side și webhook semnat |
+| Administrare | `/admin`, catalog, stocuri, comenzi și utilizatori |
 
-## 8. Personalizări și elemente de originalitate
+## 8. Personalizări
 
-### Modulul de descoperire conversațională
+### Căutarea conversațională
 
-Prima pagină pornește de la întrebarea „Ce ai vrea să găsești astăzi?”. Modulul interpretează expresii precum „un cadou de casă nouă sub 150 lei” și extrage automat bugetul, ocazia, categoria, materialul și urgența. Rezultatele sunt ordonate după relevanță și filtrele detectate sunt aplicate în catalog.
+Prima pagină conține doar identitatea magazinului, o scenă 3D și câmpul de căutare. O cerere precum „vreau un cadou cald pentru o prietenă, sub 150 lei, care să ajungă repede” este interpretată după buget, ocazie, destinatar, interese, atmosferă, culoare, material și urgență. Pentru denumiri precise, tipul produsului devine o condiție obligatorie: „pahare” returnează exclusiv pahare și seturi de pahare, iar o combinație inexistentă returnează zero rezultate.
 
-### Scena 3D „ceainicul atelierului”
+Catalogul conține 720 de produse generate idempotent în PostgreSQL din 24 de colecții handmade. Interogarea, filtrarea, sortarea, numărarea și paginarea cu 24 produse pe pagină sunt executate server-side. Coloana de căutare full-text și indexurile pentru tip, categorie, preț, rating și dată evită încărcarea întregului catalog în browser.
 
-Un ceainic ceramic imaginar este construit procedural din corp, capac, toartă, cioc, glazură, petale, ac și un fir curbat. Obiectul răspunde la cursor, plutește subtil și este completat de o secvență GSAP pentru intrarea elementelor. Randarea 3D este limitată la aproximativ 30 FPS, folosește un pixel ratio plafonat, se oprește când tabul nu este vizibil și este înlocuită de un fallback CSS pe ecrane mici sau în modul `prefers-reduced-motion`.
+### Scena 3D
 
-### Fluxul complet de cont
+La fiecare accesare este ales aleator un obiect PBR dintr-o listă de șapte modele Poly Haven: vază ceramică antică, vază ceramică pictată, vază din alamă gravată, cupe ornamentale din alamă, serviciu de ceai floral, elefant sculptat și perne decorative țesute. Modelele CC0 folosesc texturi 2K și sunt găzduite local. Obiectul este încadrat automat prin bounding sphere, se rotește lent și uniform pe toate cele trei axe și poate fi rotit, apropiat sau deplasat direct de utilizator. Se încarcă un singur model, rezoluția randării este plafonată, animația se suspendă în taburile ascunse și respectă preferința de mișcare redusă. Sursele și licențele se află în `public/models/ATTRIBUTION.md`.
 
-Magazinul folosește autentificarea securizată oferită de Sites, fără o parolă suplimentară stocată de proiect. După autentificare, clientul își completează telefonul, adresa și preferințele; datele se salvează în tabela `profiles` când Supabase este configurat și rămân demonstrabile local în lipsa credențialelor.
+### Fluxul de cont
 
-### Fluxul de încredere
+Supabase Auth oferă creare cont, confirmare email, autentificare, resetare parolă și sesiune persistentă. Profilul, adresa, preferințele, coșul și favoritele utilizatorilor autentificați sunt salvate în PostgreSQL și protejate prin Row Level Security. Nu există conturi sau comenzi simulate local.
 
-Checkout-ul explică explicit mediul sandbox, comanda apare în administrare, iar factura conține dovada plății de test. Astfel, demonstrația cerinței de plată este completă, repetabilă și nu implică bani reali.
+## 9. Scenariu de demonstrație
 
-## 9. Scenariu recomandat pentru demonstrație
+1. Introdu o cerere detaliată pe homepage.
+2. Verifică recomandările și filtrele aplicate în catalog.
+3. Deschide o pagină de produs și adaugă produsul în favorite și în coș.
+4. Creează un cont și completează profilul și adresa.
+5. Modifică o cantitate și aplică `POVESTE10`.
+6. Continuă către pagina Stripe și finalizează checkout-ul cu cardul de test `4242 4242 4242 4242`, orice dată viitoare și orice CVC de trei cifre.
+7. Verifică factura și istoricul comenzilor.
+8. Deschide panoul administrativ și modifică un stoc.
+9. Trimite formularul de contact și testează newsletter-ul.
 
-1. Deschide homepage-ul și mișcă cursorul peste ceainicul 3D.
-2. Caută „Vreau un cadou cald pentru o prietenă, îi plac plantele, sub 150 lei și să ajungă repede”.
-3. Arată semnalele înțelese și motivele potrivirii în `/catalog`, apoi modifică filtrele.
-4. Deschide pagina produsului „Ierbar de câmp” și prezintă galeria, atelierul, stocul și livrarea.
-5. Creează/autentifică un cont, completează profilul și adresa implicită.
-6. Adaugă produsul în coș, aplică `POVESTE10` și modifică cantitatea.
-7. Continuă checkout-ul și folosește cardul `4242 4242 4242 4242`, expirare `12/34`, CVC `123`.
-8. Tipărește factura, verifică istoricul din cont și apoi ruta `/admin`.
+## 10. Capturi necesare
 
-## 10. Capturi de ecran necesare pentru predare
-
-- homepage și căutarea în limbaj natural;
-- rezultatele filtrate și catalogul pe categorii;
-- pagina individuală de detalii produs;
+- homepage și scena 3D;
+- căutare în limbaj natural și rezultate;
+- catalog, filtre și categorii;
+- pagina individuală de produs;
 - creare cont, profil și adresă;
-- coșul și actualizarea cantității;
-- promoția `POVESTE10`;
-- checkout-ul sandbox cu datele de test vizibile;
-- confirmarea plății și factura;
-- panoul admin: catalog/stoc și comenzi;
-- rezultat PageSpeed Insights pentru URL-ul publicat.
+- coș, promoție și actualizarea cantității;
+- checkout, confirmare și factură;
+- panoul administrativ;
+- contact și newsletter;
+- rezultatele Mobile și Desktop din PageSpeed Insights pentru domeniul final.
 
-## 11. PageSpeed și optimizări
+## 11. Performanță și accesibilitate
 
-- imagini de produs redimensionate și comprimate;
-- imagini sub fold încărcate cu `loading="lazy"`;
-- scena Three.js încărcată dinamic, plafonată la aproximativ 30 FPS și suspendată în taburile ascunse;
+- imaginile sunt redimensionate și comprimate;
+- scena 3D este încărcată dinamic și suspendată în taburile ascunse;
 - animațiile respectă `prefers-reduced-motion`;
-- Oswald este servit local, fără cereri Google Fonts la runtime;
-- layout responsive și elemente accesibile din tastatură.
+- fontul este servit local;
+- interfața este responsive și navigabilă cu tastatura;
+- metadatele, sitemap-ul și robots.txt folosesc domeniul configurat.
 
-Pentru captura cerută: deschide `https://pagespeed.web.dev/`, introdu URL-ul public și salvează ecranul cu rezultatele Mobile și Desktop.
+Raportul PageSpeed trebuie generat după publicarea pe domeniul final, deoarece scorurile depind de provider, regiune și configurația de producție.
 
-Raportul Mobile rulat la 26.10.2026 după optimizare a obținut:
+## 12. Trecerea la producție
 
-- **98 — Performanță**;
-- **91 — Accesibilitate**;
-- **100 — Cele mai bune practici**;
-- **100 — SEO**;
-- FCP 1,4 s, LCP 1,7 s, TBT 0 ms, CLS 0.
-
-Raport salvat: [PageSpeed Insights — Fir de Poveste](https://pagespeed.web.dev/analysis/https-fir-de-poveste-handmade-elatedpine3-chatgpt-site/9v9t26yub8?form_factor=mobile)
-
-## 12. Limitări și trecerea la producție
-
-Produsele, clienții și firma din demo sunt fictive. Pentru producție sunt necesare: configurarea proiectului Supabase, chei Stripe test/live, validarea juridică a termenilor și politicilor, webhook Stripe pentru confirmarea server-side și notificări tranzacționale. Autentificarea contului este deja delegată mecanismului securizat Sites. Nicio cheie secretă nu trebuie comisă în repository.
+Înaintea lansării comerciale sunt necesare chei Stripe live, configurarea endpointului webhook existent, emailuri tranzacționale, roluri administrative distincte, conținut juridic validat și date reale despre firmă. Nicio cheie secretă nu se comite în repository.

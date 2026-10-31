@@ -1,157 +1,228 @@
 "use client";
 
-import { useEffect, useRef } from "react";
+import { useEffect, useRef, useState } from "react";
+import { gsap } from "gsap";
 import * as THREE from "three";
+import { TrackballControls } from "three/examples/jsm/controls/TrackballControls.js";
+import { RoomEnvironment } from "three/examples/jsm/environments/RoomEnvironment.js";
+import { GLTFLoader } from "three/examples/jsm/loaders/GLTFLoader.js";
 
-export function ArtisanOrbit() {
+const models = [
+  {
+    name: "Vază ceramică antică cu model floral",
+    path: "/models/antique-ceramic-vase/antique_ceramic_vase_01_2k.gltf",
+    orientation: [-0.08, -0.35, 0.02],
+  },
+  {
+    name: "Elefant sculptat în lemn",
+    path: "/models/carved-wooden-elephant/carved_wooden_elephant_2k.gltf",
+    orientation: [-0.1, -0.55, 0.04],
+  },
+  {
+    name: "Perne decorative țesute",
+    path: "/models/throw-pillows/throw_pillows_01_2k.gltf",
+    orientation: [-0.18, -0.42, 0.06],
+  },
+  {
+    name: "Vază ceramică pictată",
+    path: "/models/ceramic-vase-02/ceramic_vase_02_2k.gltf",
+    orientation: [-0.08, -0.48, 0.02],
+  },
+  {
+    name: "Vază din alamă gravată",
+    path: "/models/brass-vase-03/brass_vase_03_2k.gltf",
+    orientation: [-0.06, -0.38, 0.02],
+  },
+  {
+    name: "Cupe ornamentale din alamă",
+    path: "/models/brass-goblets/brass_goblets_2k.gltf",
+    orientation: [-0.14, -0.5, 0.04],
+  },
+  {
+    name: "Serviciu de ceai floral",
+    path: "/models/tea-set/tea_set_01_2k.gltf",
+    orientation: [-0.2, -0.44, 0.04],
+  },
+] as const;
+
+function randomIndex() {
+  return Math.floor(Math.random() * models.length);
+}
+
+export function ArtisanOrbit({ onReady, onUnavailable }: { onReady?: () => void; onUnavailable?: () => void }) {
   const hostRef = useRef<HTMLDivElement>(null);
+  const [model, setModel] = useState<(typeof models)[number] | null>(null);
+
+  useEffect(() => { queueMicrotask(() => setModel(models[randomIndex()])); }, []);
 
   useEffect(() => {
     const host = hostRef.current;
-    if (!host) return;
+    if (!host || !model) return;
+
     const scene = new THREE.Scene();
-    const camera = new THREE.PerspectiveCamera(36, 1, 0.1, 50);
-    camera.position.set(0, 0.1, 7.4);
-    const renderer = new THREE.WebGLRenderer({ antialias: true, alpha: true, powerPreference: "high-performance" });
-    renderer.setPixelRatio(Math.min(devicePixelRatio, 1.5));
+    const camera = new THREE.PerspectiveCamera(32, 1, 0.1, 40);
+    camera.position.set(0, 0.15, 6.6);
+    camera.lookAt(0, 0, 0);
+
+    let renderer: THREE.WebGLRenderer;
+    try { renderer = new THREE.WebGLRenderer({ alpha: true, antialias: true, powerPreference: "default" }); }
+    catch { host.setAttribute("aria-label", "Previzualizare 3D indisponibilă pe acest dispozitiv"); onUnavailable?.(); return; }
+    renderer.setPixelRatio(Math.min(window.devicePixelRatio, 1.5));
     renderer.outputColorSpace = THREE.SRGBColorSpace;
     renderer.toneMapping = THREE.ACESFilmicToneMapping;
-    renderer.toneMappingExposure = 1.05;
+    renderer.toneMappingExposure = 1.15;
     host.appendChild(renderer.domElement);
 
-    const root = new THREE.Group();
-    root.rotation.set(-0.08, -0.35, -0.04);
-    scene.add(root);
-    const vessel = new THREE.Group();
-    root.add(vessel);
+    const controls = new TrackballControls(camera, renderer.domElement);
+    controls.rotateSpeed = 1.45;
+    controls.zoomSpeed = 0.55;
+    controls.panSpeed = 0.22;
+    controls.dynamicDampingFactor = 0.12;
+    controls.minDistance = 6;
+    controls.maxDistance = 8.6;
+    controls.target.set(0, 0, 0);
 
-    const ceramic = new THREE.MeshStandardMaterial({ color: 0xe2dbbe, roughness: 0.56, metalness: 0.02 });
-    const teal = new THREE.MeshStandardMaterial({ color: 0x188fa7, roughness: 0.5, metalness: 0.02 });
-    const muted = new THREE.MeshStandardMaterial({ color: 0x9dbbae, roughness: 0.68 });
-    const blue = new THREE.MeshStandardMaterial({ color: 0x769fb6, roughness: 0.58 });
-    const custard = new THREE.MeshStandardMaterial({ color: 0xd5d6aa, roughness: 0.72 });
+    const environmentGenerator = new THREE.PMREMGenerator(renderer);
+    const room = new RoomEnvironment();
+    const environment = environmentGenerator.fromScene(room, 0.04);
+    room.dispose();
+    scene.environment = environment.texture;
 
-    const body = new THREE.Mesh(new THREE.SphereGeometry(1.35, 36, 24), ceramic);
-    body.scale.set(1.12, 0.92, 1);
-    body.position.y = -0.2;
-    vessel.add(body);
-    const neck = new THREE.Mesh(new THREE.CylinderGeometry(0.56, 0.78, 0.72, 32), ceramic);
-    neck.position.y = 1.05;
-    vessel.add(neck);
-    const rim = new THREE.Mesh(new THREE.TorusGeometry(0.59, 0.085, 10, 42), teal);
-    rim.rotation.x = Math.PI / 2;
-    rim.position.y = 1.43;
-    vessel.add(rim);
-    const lid = new THREE.Mesh(new THREE.SphereGeometry(0.54, 28, 14, 0, Math.PI * 2, 0, Math.PI / 2), blue);
-    lid.scale.y = 0.45;
-    lid.position.y = 1.48;
-    vessel.add(lid);
-    const lidDot = new THREE.Mesh(new THREE.SphereGeometry(0.15, 18, 12), teal);
-    lidDot.position.y = 1.82;
-    vessel.add(lidDot);
+    const stage = new THREE.Group();
+    const objectRoot = new THREE.Group();
+    stage.add(objectRoot);
+    scene.add(stage);
 
-    const handle = new THREE.Mesh(new THREE.TorusGeometry(0.78, 0.13, 14, 48, Math.PI * 1.65), teal);
-    handle.rotation.set(0, Math.PI / 2, 0.2);
-    handle.position.set(-1.18, 0.05, 0);
-    vessel.add(handle);
-    const spout = new THREE.Group();
-    const spoutBase = new THREE.Mesh(new THREE.CylinderGeometry(0.22, 0.42, 1.45, 20), ceramic);
-    spoutBase.rotation.z = -1.04;
-    spoutBase.position.set(1.22, 0.45, 0);
-    spout.add(spoutBase);
-    const spoutLip = new THREE.Mesh(new THREE.TorusGeometry(0.24, 0.07, 10, 28), teal);
-    spoutLip.rotation.set(Math.PI / 2, 0, 0.52);
-    spoutLip.position.set(1.82, 0.82, 0);
-    spout.add(spoutLip);
-    vessel.add(spout);
-
-    for (let index = 0; index < 7; index += 1) {
-      const dot = new THREE.Mesh(new THREE.SphereGeometry(0.055 + (index % 2) * 0.018, 12, 8), index % 2 ? teal : blue);
-      const angle = (index / 7) * Math.PI * 2;
-      dot.position.set(Math.cos(angle) * 1.06, -0.25 + Math.sin(index * 1.8) * 0.48, Math.sin(angle) * 0.95);
-      vessel.add(dot);
-    }
-
-    const ribbonCurve = new THREE.CatmullRomCurve3([
-      new THREE.Vector3(-2.4, -1.3, -0.2), new THREE.Vector3(-1.3, -1.75, 0.45), new THREE.Vector3(0, -1.5, 0.1),
-      new THREE.Vector3(1.4, -1.8, -0.3), new THREE.Vector3(2.45, -1.2, 0.15),
-    ]);
-    const ribbon = new THREE.Mesh(new THREE.TubeGeometry(ribbonCurve, 52, 0.045, 8, false), teal);
-    root.add(ribbon);
-
-    const mobile = new THREE.Group();
-    root.add(mobile);
-    const petalGeometry = new THREE.SphereGeometry(0.16, 14, 10);
-    for (let index = 0; index < 9; index += 1) {
-      const orbit = (index / 9) * Math.PI * 2;
-      const petal = new THREE.Mesh(petalGeometry, index % 3 === 0 ? custard : index % 2 ? muted : blue);
-      petal.scale.set(1.7, 0.5, 0.75);
-      petal.position.set(Math.cos(orbit) * (2.2 + (index % 2) * 0.3), Math.sin(orbit * 1.7) * 1.55, Math.sin(orbit) * 1.1);
-      petal.rotation.set(orbit, orbit * 0.5, -orbit);
-      mobile.add(petal);
-    }
-    const needle = new THREE.Mesh(new THREE.CapsuleGeometry(0.035, 1.05, 5, 10), new THREE.MeshStandardMaterial({ color: 0xc7d8db, roughness: 0.28, metalness: 0.66 }));
-    needle.position.set(-2.05, 1.5, 0.6);
-    needle.rotation.z = -0.75;
-    mobile.add(needle);
-
-    scene.add(new THREE.HemisphereLight(0xffffff, 0x769fb6, 2.2));
-    const key = new THREE.DirectionalLight(0xfff7db, 4.3);
-    key.position.set(3, 5, 6);
+    const key = new THREE.DirectionalLight(0xfff4d2, 3.8);
+    key.position.set(4.5, 6, 5);
     scene.add(key);
-    const edge = new THREE.PointLight(0x188fa7, 2.2, 10);
-    edge.position.set(-4, 0, 4);
-    scene.add(edge);
+    const fill = new THREE.DirectionalLight(0x9dbbae, 2.4);
+    fill.position.set(-4, 1.5, 4);
+    scene.add(fill);
+    const rim = new THREE.PointLight(0x188fa7, 5, 12);
+    rim.position.set(-3, 3.5, -2);
+    scene.add(rim);
 
-    const pointer = { x: 0, y: 0 };
-    const onPointer = (event: PointerEvent) => {
-      const rect = host.getBoundingClientRect();
-      pointer.x = ((event.clientX - rect.left) / rect.width - 0.5) * 0.8;
-      pointer.y = ((event.clientY - rect.top) / rect.height - 0.5) * 0.55;
+    let active = true;
+    let visible = true;
+    const reducedMotion = matchMedia("(prefers-reduced-motion: reduce)").matches;
+    const disposeModel = (root: THREE.Object3D) => {
+      root.traverse((object) => {
+        if (!(object instanceof THREE.Mesh)) return;
+        object.geometry.dispose();
+        const materials = Array.isArray(object.material) ? object.material : [object.material];
+        materials.forEach((material) => {
+          Object.values(material).forEach((value) => { if (value instanceof THREE.Texture) value.dispose(); });
+          material.dispose();
+        });
+      });
     };
-    host.addEventListener("pointermove", onPointer, { passive: true });
+    const loader = new GLTFLoader();
+    loader.load(
+      model.path,
+      (gltf) => {
+        if (!active) { disposeModel(gltf.scene); return; }
+        const loadedScene = gltf.scene;
+        const bounds = new THREE.Box3().setFromObject(loadedScene);
+        const sphere = bounds.getBoundingSphere(new THREE.Sphere());
+        const scale = 1.25 / Math.max(sphere.radius, 0.001);
+        loadedScene.scale.setScalar(scale);
+        loadedScene.position.copy(sphere.center).multiplyScalar(-scale);
+        loadedScene.traverse((object) => {
+          if (!(object instanceof THREE.Mesh)) return;
+          object.castShadow = true;
+          object.receiveShadow = true;
+          const materials = Array.isArray(object.material)
+            ? object.material
+            : [object.material];
+          materials.forEach((material) => {
+            if (material instanceof THREE.MeshStandardMaterial)
+              material.envMapIntensity = 1.1;
+          });
+        });
+        objectRoot.rotation.set(
+          model.orientation[0],
+          model.orientation[1],
+          model.orientation[2]
+        );
+        objectRoot.add(loadedScene);
+        host.setAttribute("data-loaded", "true");
+        onReady?.();
+        if (!reducedMotion) gsap.fromTo(
+          objectRoot.scale,
+          { x: 0.88, y: 0.88, z: 0.88 },
+          { x: 1, y: 1, z: 1, duration: 1.4, ease: "power3.out" }
+        );
+      },
+      undefined,
+      () => {
+        if (!active) return;
+        host.setAttribute("aria-label", "Modelul 3D nu a putut fi încărcat");
+        onUnavailable?.();
+      }
+    );
+
     const resize = () => {
       const { width, height } = host.getBoundingClientRect();
       renderer.setSize(Math.max(1, width), Math.max(1, height), false);
       camera.aspect = Math.max(1, width) / Math.max(1, height);
       camera.updateProjectionMatrix();
+      controls.handleResize();
     };
     const observer = new ResizeObserver(resize);
     observer.observe(host);
     resize();
 
-    let frame = 0;
-    let last = 0;
-    const start = performance.now();
+    const visibility = new IntersectionObserver(([entry]) => { visible = entry.isIntersecting; });
+    visibility.observe(host);
+    const startedAt = performance.now();
+    let animationFrame = 0;
+    let lastFrame = 0;
     const render = (now: number) => {
-      frame = requestAnimationFrame(render);
-      if (document.hidden || now - last < 33) return;
-      last = now;
-      const elapsed = (now - start) / 1000;
-      root.rotation.y += (pointer.x - 0.28 + elapsed * 0.05 - root.rotation.y) * 0.035;
-      root.rotation.x += (-pointer.y - 0.08 - root.rotation.x) * 0.045;
-      root.position.y = Math.sin(elapsed * 0.75) * 0.08;
-      vessel.rotation.z = Math.sin(elapsed * 0.55) * 0.025;
-      mobile.rotation.y = -elapsed * 0.12;
-      mobile.children.forEach((child, index) => { child.rotation.y += 0.006 + index * 0.0003; });
+      animationFrame = requestAnimationFrame(render);
+      if (document.hidden || !visible || now - lastFrame < 32) return;
+      lastFrame = now;
+      const elapsed = (now - startedAt) / 1000;
+      const rotation = reducedMotion ? 0 : elapsed * 0.024;
+      const movement = reducedMotion ? 0 : elapsed * 0.22;
+      objectRoot.rotation.set(
+        model.orientation[0] + rotation,
+        model.orientation[1] + rotation,
+        model.orientation[2] + rotation
+      );
+      stage.position.set(
+        Math.sin(movement) * 0.035,
+        Math.sin(movement + (Math.PI * 2) / 3) * 0.035,
+        Math.sin(movement + (Math.PI * 4) / 3) * 0.035
+      );
+      controls.update();
       renderer.render(scene, camera);
     };
-    frame = requestAnimationFrame(render);
+    animationFrame = requestAnimationFrame(render);
 
     return () => {
-      cancelAnimationFrame(frame);
+      active = false;
+      cancelAnimationFrame(animationFrame);
       observer.disconnect();
-      host.removeEventListener("pointermove", onPointer);
-      scene.traverse((object) => {
-        if (object instanceof THREE.Mesh) {
-          object.geometry.dispose();
-          if (Array.isArray(object.material)) object.material.forEach((material) => material.dispose()); else object.material.dispose();
-        }
-      });
+      visibility.disconnect();
+      controls.dispose();
+      gsap.killTweensOf(objectRoot.scale);
+      disposeModel(scene);
+      environment.texture.dispose();
+      environmentGenerator.dispose();
       renderer.dispose();
       renderer.domElement.remove();
     };
-  }, []);
+  }, [model, onReady, onUnavailable]);
 
-  return <div ref={hostRef} className="artisan-orbit" aria-hidden="true" />;
+  return (
+    <div className="artisan-stage">
+      <div
+        ref={hostRef}
+        className="artisan-orbit"
+        aria-label={model ? `Model 3D: ${model.name}` : "Se încarcă modelul 3D"}
+        role="img"
+      />
+    </div>
+  );
 }

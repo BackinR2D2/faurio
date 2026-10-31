@@ -1,0 +1,146 @@
+[
+  {
+    "slug": "bol-nisip",
+    "prompt": "Use case: product-mockup\nAsset type: single e-commerce product photograph for a demonstration handmade shop\nStyle: photorealistic artisanal catalog photography, convincing material details.\nComposition: square image, entire product centered with generous margins, three-quarter view on warm cream limestone surface and neutral plaster backdrop, soft side daylight, gentle realistic shadows.\nConstraints: only the described product, no unrelated products, no people, no text, no logos, no watermarks, no collage.\nSubject: One low handmade sand-colored stoneware bowl, wavy organic rim, finely speckled exterior, creamy glazed interior. Empty bowl, viewed from slightly above so interior is visible.",
+    "mode": "built-in image_gen",
+    "output": "/products/catalog/bol-nisip.webp"
+  },
+  {
+    "slug": "bratara-fir",
+    "prompt": "Use case: product-mockup\nAsset type: single e-commerce product photograph for a demonstration handmade shop\nStyle: photorealistic artisanal catalog photography, convincing material details.\nComposition: square image, entire product centered with generous margins, three-quarter view on warm cream limestone surface and neutral plaster backdrop, soft side daylight, gentle realistic shadows.\nConstraints: only the described product, no unrelated products, no people, no text, no logos, no watermarks, no collage.\nSubject: One handmade adjustable bracelet formed from deep blue waxed textile cord and a small recycled silver connector, complete circular bracelet visible with sliding knots, lying on cream stone.",
+    "mode": "built-in image_gen",
+    "output": "/products/catalog/bratara-fir.webp"
+  },
+  {
+    "slug": "broderie-ierbar",
+    "prompt": "Use case: product-mockup\nAsset type: single e-commerce product photograph for a demonstration handmade shop\nStyle: photorealistic artisanal catalog photography, convincing material details.\nComposition: square image, entire product centered with generous margins, three-quarter view on warm cream limestone surface and neutral plaster backdrop, soft side daylight, gentle realistic shadows.\nConstraints: only the described product, no unrelated products, no people, no text, no logos, no watermarks, no collage.\nSubject: One circular wooden embroidery hoop containing linen with hand-embroidered wildflowers in ochre, moss green and cream thread, detailed visible stitches. Hoop standing upright.",
+    "mode": "built-in image_gen",
+    "output": "/products/catalog/broderie-ierbar.webp"
+  },
+  {
+    "slug": "cana-luna",
+    "prompt": "Use case: product-mockup\nAsset type: single e-commerce product photograph for a demonstration handmade shop\nStyle: photorealistic artisanal catalog photography, convincing material details.\nComposition: square image, entire product centered with generous margins, three-quarter view on warm cream limestone surface and neutral plaster backdrop, soft side daylight, gentle realistic shadows.\nConstraints: only the described product, no unrelated products, no people, no text, no logos, no watermarks, no collage.\nSubject: One handmade speckled cream ceramic coffee mug with a single deep cobalt-blue crescent moon painted on the front, curved handle, food-safe glossy glaze.",
+    "mode": "built-in image_gen",
+    "output": "/products/catalog/cana-luna.webp"
+  },
+  {
+    "slug": "ceasca-zori",
+    "prompt": "Use case: product-mockup\nAsset type: single e-commerce product photograph for a demonstration handmade shop\nStyle: photorealistic artisanal catalog photography, convincing material details.\nComposition: square image, entire product centered with generous margins, three-quarter view on warm cream limestone surface and neutral plaster backdrop, soft side daylight, gentle realistic shadows.\nConstraints: only the described product, no unrelated products, no people, no text, no logos, no watermarks, no collage.\nSubject: One small handmade cream ceramic espresso cup with a delicate moss-green glazed rim and matching small saucer. Fine uneven pottery edges, no handle.",
+    "mode": "built-in image_gen",
+    "output": "/products/catalog/ceasca-zori.webp"
+  },
+  {
+    "slug": "cercei-frunza",
+    "prompt": "Use case: product-mockup\nAsset type: single e-commerce product photograph for a demonstration handmade shop\nStyle: photorealistic artisanal catalog photography, convincing material details.\nComposition: square image, entire product centered with generous margins, three-quarter view on warm cream limestone surface and neutral plaster backdrop, soft side daylight, gentle realistic shadows.\nConstraints: only the described product, no unrelated products, no people, no text, no logos, no watermarks, no collage.\nSubject: Exactly one pair of handmade gold-brass leaf-shaped dangling earrings with delicate engraved veins and subtle green patina, hooks visible, photographed lying on cream stone. Only earrings, no necklace.",
+    "mode": "built-in image_gen",
+    "output": "/products/catalog/cercei-frunza.webp"
+  },
+  {
+    "slug": "colier-roua",
+    "prompt": "Use case: product-mockup\nAsset type: single e-commerce product photograph for a demonstration handmade shop\nStyle: photorealistic artisanal catalog photography, convincing material details.\nComposition: square image, entire product centered with generous margins, three-quarter view on warm cream limestone surface and neutral plaster backdrop, soft side daylight, gentle realistic shadows.\nConstraints: only the described product, no unrelated products, no people, no text, no logos, no watermarks, no collage.\nSubject: One delicate handmade recycled-silver necklace arranged in a gentle loop, fine chain and a small polished teardrop pendant. Close-up jewelry photography, full chain and pendant visible on cream stone.",
+    "mode": "built-in image_gen",
+    "output": "/products/catalog/colier-roua.webp"
+  },
+  {
+    "slug": "cutie-nuc",
+    "prompt": "Use case: product-mockup\nAsset type: single e-commerce product photograph for a demonstration handmade shop\nStyle: photorealistic artisanal catalog photography, convincing material details.\nComposition: square image, entire product centered with generous margins, three-quarter view on warm cream limestone surface and neutral plaster backdrop, soft side daylight, gentle realistic shadows.\nConstraints: only the described product, no unrelated products, no people, no text, no logos, no watermarks, no collage.\nSubject: One small handmade dark walnut keepsake box with rounded corners, visible rich wood grain, lid slightly open showing interior, no contents. Entire wooden box visible.",
+    "mode": "built-in image_gen",
+    "output": "/products/catalog/cutie-nuc.webp"
+  },
+  {
+    "slug": "decor-luna",
+    "prompt": "Use case: product-mockup\nAsset type: single e-commerce product photograph for a demonstration handmade shop\nStyle: photorealistic artisanal catalog photography, convincing material details.\nComposition: square image, entire product centered with generous margins, three-quarter view on warm cream limestone surface and neutral plaster backdrop, soft side daylight, gentle realistic shadows.\nConstraints: only the described product, no unrelated products, no people, no text, no logos, no watermarks, no collage.\nSubject: One freestanding handmade crescent-moon decorative sculpture, cast mineral composite, matte cream and subtle blue marbling, hand-sanded edges, sculptural tabletop object. Entire crescent visible, no candle.",
+    "mode": "built-in image_gen",
+    "output": "/products/catalog/decor-luna.webp"
+  },
+  {
+    "slug": "farfurie-floare",
+    "prompt": "Use case: product-mockup\nAsset type: single e-commerce product photograph for a demonstration handmade shop\nStyle: photorealistic artisanal catalog photography, convincing material details.\nComposition: square image, entire product centered with generous margins, three-quarter view on warm cream limestone surface and neutral plaster backdrop, soft side daylight, gentle realistic shadows.\nConstraints: only the described product, no unrelated products, no people, no text, no logos, no watermarks, no collage.\nSubject: One handmade cream ceramic dinner plate, shallow rim with delicate green botanical leaves painted by hand. Empty plate photographed slightly from above, fully visible.",
+    "mode": "built-in image_gen",
+    "output": "/products/catalog/farfurie-floare.webp"
+  },
+  {
+    "slug": "jurnal-herbarium",
+    "prompt": "Use case: product-mockup\nAsset type: single e-commerce product photograph for a demonstration handmade shop\nStyle: photorealistic artisanal catalog photography, convincing material details.\nComposition: square image, entire product centered with generous margins, three-quarter view on warm cream limestone surface and neutral plaster backdrop, soft side daylight, gentle realistic shadows.\nConstraints: only the described product, no unrelated products, no people, no text, no logos, no watermarks, no collage.\nSubject: One handmade closed journal with moss-green linen cloth cover and a subtle pressed botanical motif, stitched book spine and cream recycled-paper page edges visible, resting on cream stone. No visible writing or lettering.",
+    "mode": "built-in image_gen",
+    "output": "/products/catalog/jurnal-herbarium.webp"
+  },
+  {
+    "slug": "lumanare-chihlimbar",
+    "prompt": "Use case: product-mockup\nAsset type: single e-commerce product photograph for a demonstration handmade shop\nStyle: photorealistic artisanal catalog photography, convincing material details.\nComposition: square image, entire product centered with generous margins, three-quarter view on warm cream limestone surface and neutral plaster backdrop, soft side daylight, gentle realistic shadows.\nConstraints: only the described product, no unrelated products, no people, no text, no logos, no watermarks, no collage.\nSubject: One handmade soy-wax candle in an amber translucent glass jar, cream-colored wax, single unlit cotton wick clearly visible from slightly above, no label.",
+    "mode": "built-in image_gen",
+    "output": "/products/catalog/lumanare-chihlimbar.webp"
+  },
+  {
+    "slug": "lumanare-smochin",
+    "prompt": "Use case: product-mockup\nAsset type: single e-commerce product photograph for a demonstration handmade shop\nStyle: photorealistic artisanal catalog photography, convincing material details.\nComposition: square image, entire product centered with generous margins, three-quarter view on warm cream limestone surface and neutral plaster backdrop, soft side daylight, gentle realistic shadows.\nConstraints: only the described product, no unrelated products, no people, no text, no logos, no watermarks, no collage.\nSubject: One handmade soy-wax candle in a moss-green opaque glass jar, cream wax and single unlit cotton wick clearly visible from slightly above. No label.",
+    "mode": "built-in image_gen",
+    "output": "/products/catalog/lumanare-smochin.webp"
+  },
+  {
+    "slug": "pahar-onda",
+    "prompt": "Use case: product-mockup\nAsset type: single e-commerce product photograph for a demonstration handmade shop\nStyle: photorealistic artisanal catalog photography, convincing material details.\nComposition: square image, entire product centered with generous margins, three-quarter view on warm cream limestone surface and neutral plaster backdrop, soft side daylight, gentle realistic shadows.\nConstraints: only the described product, no unrelated products, no people, no text, no logos, no watermarks, no collage.\nSubject: One amber translucent drinking tumbler with vertically rippled blown glass walls and a sturdy thick base, empty, no handle, no stem. It is a drinking glass, no candle or wax.",
+    "mode": "built-in image_gen",
+    "output": "/products/catalog/pahar-onda.webp"
+  },
+  {
+    "slug": "pahar-prisma",
+    "prompt": "Use case: product-mockup\nAsset type: single e-commerce product photograph for a demonstration handmade shop\nStyle: photorealistic artisanal catalog photography, convincing material details.\nComposition: square image, entire product centered with generous margins, three-quarter view on warm cream limestone surface and neutral plaster backdrop, soft side daylight, gentle realistic shadows.\nConstraints: only the described product, no unrelated products, no people, no text, no logos, no watermarks, no collage.\nSubject: One handmade marine-blue translucent blown drinking tumbler, thick stable glass base, small air bubbles and subtle faceted surface, empty, no stem, no handle. Glass, not ceramic.",
+    "mode": "built-in image_gen",
+    "output": "/products/catalog/pahar-prisma.webp"
+  },
+  {
+    "slug": "patura-molid",
+    "prompt": "Use case: product-mockup\nAsset type: single e-commerce product photograph for a demonstration handmade shop\nStyle: photorealistic artisanal catalog photography, convincing material details.\nComposition: square image, entire product centered with generous margins, three-quarter view on warm cream limestone surface and neutral plaster backdrop, soft side daylight, gentle realistic shadows.\nConstraints: only the described product, no unrelated products, no people, no text, no logos, no watermarks, no collage.\nSubject: One handmade soft woven recycled-cotton throw blanket with forest-green and cream geometric mountain pattern, partly folded and elegantly draped to reveal tassels and woven texture. Only blanket, no cushions or embroidery hoops.",
+    "mode": "built-in image_gen",
+    "output": "/products/catalog/patura-molid.webp"
+  },
+  {
+    "slug": "perna-apus",
+    "prompt": "Use case: product-mockup\nAsset type: single e-commerce product photograph for a demonstration handmade shop\nStyle: photorealistic artisanal catalog photography, convincing material details.\nComposition: square image, entire product centered with generous margins, three-quarter view on warm cream limestone surface and neutral plaster backdrop, soft side daylight, gentle realistic shadows.\nConstraints: only the described product, no unrelated products, no people, no text, no logos, no watermarks, no collage.\nSubject: One handmade square decorative cushion with a removable woven linen and cotton cover in dusty rose and terracotta broad color blocks, tactile fabric weave and subtle stitched seams. No embroidery hoops.",
+    "mode": "built-in image_gen",
+    "output": "/products/catalog/perna-apus.webp"
+  },
+  {
+    "slug": "rama-feriga",
+    "prompt": "Use case: product-mockup\nAsset type: single e-commerce product photograph for a demonstration handmade shop\nStyle: photorealistic artisanal catalog photography, convincing material details.\nComposition: square image, entire product centered with generous margins, three-quarter view on warm cream limestone surface and neutral plaster backdrop, soft side daylight, gentle realistic shadows.\nConstraints: only the described product, no unrelated products, no people, no text, no logos, no watermarks, no collage.\nSubject: One handmade natural-oak rectangular picture frame standing upright, containing a single real pressed green fern on warm cream paper under clear glass. No embroidery or circular hoop.",
+    "mode": "built-in image_gen",
+    "output": "/products/catalog/rama-feriga.webp"
+  },
+  {
+    "slug": "semn-tei",
+    "prompt": "Use case: product-mockup\nAsset type: single e-commerce product photograph for a demonstration handmade shop\nStyle: photorealistic artisanal catalog photography, convincing material details.\nComposition: square image, entire product centered with generous margins, three-quarter view on warm cream limestone surface and neutral plaster backdrop, soft side daylight, gentle realistic shadows.\nConstraints: only the described product, no unrelated products, no people, no text, no logos, no watermarks, no collage.\nSubject: One handmade narrow rectangular recycled-paper bookmark with a single pressed green linden leaf, ochre fiber details and a small natural-fiber tassel at the top. Whole bookmark photographed flat from above. No text, no books.",
+    "mode": "built-in image_gen",
+    "output": "/products/catalog/semn-tei.webp"
+  },
+  {
+    "slug": "set-pahare-rau",
+    "prompt": "Use case: product-mockup\nAsset type: single e-commerce product photograph for a demonstration handmade shop\nStyle: photorealistic artisanal catalog photography, convincing material details.\nComposition: square image, entire product centered with generous margins, three-quarter view on warm cream limestone surface and neutral plaster backdrop, soft side daylight, gentle realistic shadows.\nConstraints: only the described product, no unrelated products, no people, no text, no logos, no watermarks, no collage.\nSubject: Exactly two handmade translucent green drinking tumblers, blown recycled glass with tiny air bubbles, slightly different organic silhouettes and thick bases. Empty, no stems, no handles.",
+    "mode": "built-in image_gen",
+    "output": "/products/catalog/set-pahare-rau.webp"
+  },
+  {
+    "slug": "suport-arc",
+    "prompt": "Use case: product-mockup\nAsset type: single e-commerce product photograph for a demonstration handmade shop\nStyle: photorealistic artisanal catalog photography, convincing material details.\nComposition: square image, entire product centered with generous margins, three-quarter view on warm cream limestone surface and neutral plaster backdrop, soft side daylight, gentle realistic shadows.\nConstraints: only the described product, no unrelated products, no people, no text, no logos, no watermarks, no collage.\nSubject: One handmade sculptural arched brass candle holder with a single round socket at the top, warm gold patina and carefully hand-finished metal texture. Empty candle holder without candle, wax or glass jars.",
+    "mode": "built-in image_gen",
+    "output": "/products/catalog/suport-arc.webp"
+  },
+  {
+    "slug": "tava-nord",
+    "prompt": "Use case: product-mockup\nAsset type: single e-commerce product photograph for a demonstration handmade shop\nStyle: photorealistic artisanal catalog photography, convincing material details.\nComposition: square image, entire product centered with generous margins, three-quarter view on warm cream limestone surface and neutral plaster backdrop, soft side daylight, gentle realistic shadows.\nConstraints: only the described product, no unrelated products, no people, no text, no logos, no watermarks, no collage.\nSubject: One handmade solid walnut serving tray, elongated oval shape, shallow smoothly rounded raised rim, food-safe warm natural finish with detailed wood grain. Empty tray viewed slightly from above.",
+    "mode": "built-in image_gen",
+    "output": "/products/catalog/tava-nord.webp"
+  },
+  {
+    "slug": "vaza-indigo",
+    "prompt": "Use case: product-mockup\nAsset type: single e-commerce product photograph for a demonstration handmade shop\nStyle: photorealistic artisanal catalog photography, convincing material details.\nComposition: square image, entire product centered with generous margins, three-quarter view on warm cream limestone surface and neutral plaster backdrop, soft side daylight, gentle realistic shadows.\nConstraints: only the described product, no unrelated products, no people, no text, no logos, no watermarks, no collage.\nSubject: One tall handmade cream ceramic vase with loose cobalt-blue brushstrokes, slim neck and gently bulbous body, beautifully irregular glossy glaze. Empty, no flowers.",
+    "mode": "built-in image_gen",
+    "output": "/products/catalog/vaza-indigo.webp"
+  },
+  {
+    "slug": "vaza-pamant",
+    "prompt": "Use case: product-mockup\nAsset type: single e-commerce product photograph for a demonstration handmade shop\nSubject: One handmade terracotta and sand-colored sculptural stoneware vase, organic rounded silhouette, mineral matte glaze, visible fine wheel-thrown texture. Empty vase, no flowers.\nStyle: photorealistic artisanal catalog photography, convincing material details.\nComposition: square image, entire object centered with generous margins, three-quarter view on warm cream limestone surface and neutral plaster backdrop, soft side daylight, gentle realistic shadows.\nConstraints: exactly the described product, no unrelated products, no people, no text, no logos, no watermarks, no collage.",
+    "mode": "built-in image_gen",
+    "output": "/products/catalog/vaza-pamant.webp"
+  }
+]

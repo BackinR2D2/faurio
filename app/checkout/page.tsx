@@ -1,9 +1,9 @@
 import type { Metadata } from "next";
 import { CheckoutView } from "@/components/checkout-view";
-import { getChatGPTUser } from "@/app/chatgpt-auth";
-export const dynamic = "force-dynamic";
-export const metadata: Metadata = { title: "Checkout securizat" };
-export default async function CheckoutPage({ searchParams }: { searchParams: Promise<{ coupon?: string }> }) {
-  const [user, params] = await Promise.all([getChatGPTUser(), searchParams]);
-  return <CheckoutView user={user ? { displayName: user.displayName, email: user.email } : null} coupon={params.coupon === "POVESTE10"} />;
+
+export const metadata: Metadata = { title: "Checkout" };
+
+export default async function CheckoutPage({ searchParams }: { searchParams: Promise<{ coupon?: string; payment?: string }> }) {
+  const params = await searchParams;
+  return <CheckoutView coupon={params.coupon === "POVESTE10"} stripeEnabled={Boolean(process.env.STRIPE_SECRET_KEY?.startsWith("sk_test_") && process.env.SUPABASE_SERVICE_ROLE_KEY && process.env.SUPABASE_URL)} paymentCancelled={params.payment === "cancelled"} />;
 }

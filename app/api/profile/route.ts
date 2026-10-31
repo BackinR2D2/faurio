@@ -1,27 +1,44 @@
-import { getChatGPTUser } from "@/app/chatgpt-auth";
-import { getSupabaseAdmin } from "@/lib/supabase-server";
+import { getRequestAuth } from "@/lib/supabase-auth-server";
+import { isMissingSchema } from "@/lib/marketplace/http";
+import { api, databaseError, readJson, requireAuth } from "@/lib/marketplace/http";
+import { z } from "zod";
 
-export async function GET() {
-  const user = await getChatGPTUser();
-  if (!user) return Response.json({ error: "Autentificare necesară." }, { status: 401 });
-  const supabase = getSupabaseAdmin();
-  if (!supabase) return Response.json({ profile: null, persisted: false });
-  const { data, error } = await supabase.from("profiles").select("name, phone, address, city, county, postal_code, newsletter, gifts").eq("user_id", user.userId).maybeSingle();
+export async function GET(request: Request) {
+  const auth = await getRequestAuth(request);
+  if (!auth) return Response.json({ error: "Autentificare necesară." }, { status: 401 });
+  const { data, error } = await auth.supabase.from("profiles").select("name, phone, address, city, county, postal_code, newsletter, gifts").eq("user_id", auth.user.id).maybeSingle();
   if (error) return Response.json({ error: error.message }, { status: 500 });
-  return Response.json({ profile: data ? { name: data.name, email: user.email, phone: data.phone, address: data.address, city: data.city, county: data.county, postalCode: data.postal_code, newsletter: data.newsletter, gifts: data.gifts } : null, persisted: true });
+  const page = Math.max(1, Math.min(10000, Math.trunc(Number(new URL(request.url).searchParams.get("page")) || 1)));
+  const { data: orders, error: ordersError, count } = await auth.supabase.from("orders").select("code, created_at, total, payment_id, status,items", { count: "exact" }).eq("user_id", auth.user.id).order("created_at", { ascending: false }).order("code").range((page - 1) * 25, page * 25 - 1);
+  if (ordersError) return Response.json({ error: ordersError.message }, { status: 500 });
+  const { data: progress, error: progressError } = await auth.supabase.rpc("buyer_order_progress", { p_page: page });
+  if (progressError && !isMissingSchema(progressError)) return Response.json({ error: "Istoricul comenzilor nu a putut fi citit." }, { status: 500 });
+  const orderProgress = (progress || []) as { code: string }[];
+  return Response.json({
+    orderCount: count || 0, page,
+    profile: data ? { name: data.name, email: auth.user.email, phone: data.phone, address: data.address, city: data.city, county: data.county, postalCode: data.postal_code, newsletter: data.newsletter, gifts: data.gifts } : null,
+    orders: (orders || []).map((order) => ({ code: order.code, date: order.created_at, total: order.total, paymentId: order.payment_id, status: order.status, items: order.items, progress: orderProgress.find((entry) => entry.code === order.code) })),
+  });
 }
 
-export async function PUT(request: Request) {
-  const user = await getChatGPTUser();
-  if (!user) return Response.json({ error: "Autentificare necesară." }, { status: 401 });
-  const body = await request.json() as Record<string, unknown>;
-  const supabase = getSupabaseAdmin();
-  if (!supabase) return Response.json({ persisted: false });
-  const { error } = await supabase.from("profiles").upsert({
-    user_id: user.userId, email: user.email, name: String(body.name || user.displayName).slice(0, 120), phone: String(body.phone || "").slice(0, 40),
-    address: String(body.address || "").slice(0, 240), city: String(body.city || "").slice(0, 100), county: String(body.county || "").slice(0, 100), postal_code: String(body.postalCode || "").slice(0, 20),
-    newsletter: Boolean(body.newsletter), gifts: Boolean(body.gifts), updated_at: new Date().toISOString(),
+export const PUT = api(async (request) => {
+  const auth = await requireAuth(request);
+  const body = await readJson(request, z.object({ name: z.string().trim().min(1).max(120), email: z.string().max(180).optional(),
+    phone: z.string().max(40), address: z.string().max(240), city: z.string().max(100), county: z.string().max(100), postalCode: z.string().max(20),
+    newsletter: z.boolean(), gifts: z.boolean() }).strict());
+  const { error } = await auth.supabase.from("profiles").upsert({
+    user_id: auth.user.id,
+    email: auth.user.email,
+    name: String(body.name || auth.user.user_metadata.full_name || "Client").slice(0, 120),
+    phone: String(body.phone || "").slice(0, 40),
+    address: String(body.address || "").slice(0, 240),
+    city: String(body.city || "").slice(0, 100),
+    county: String(body.county || "").slice(0, 100),
+    postal_code: String(body.postalCode || "").slice(0, 20),
+    newsletter: Boolean(body.newsletter),
+    gifts: Boolean(body.gifts),
+    updated_at: new Date().toISOString(),
   }, { onConflict: "user_id" });
-  if (error) return Response.json({ error: error.message }, { status: 500 });
+  databaseError(error);
   return Response.json({ persisted: true });
-}
+});

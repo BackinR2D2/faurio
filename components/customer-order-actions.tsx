@@ -1,0 +1,15 @@
+"use client";
+import {useState} from "react";
+import {studioRequest} from "@/lib/marketplace/client";
+
+export type OrderProgress={state?:string;carrier?:string;tracking?:string;returnStatus?:string;returnNote?:string;reviewedProductIds?:string[]};
+export function CustomerOrderActions({code,status,items,progress,token}:{code:string;status?:string;items?:{id:string;name:string}[];progress?:OrderProgress;token:string}){
+  const [busy,setBusy]=useState(false);const [notice,setNotice]=useState("");const [error,setError]=useState("");const [requested,setRequested]=useState(false);const [reviewed,setReviewed]=useState<string[]>([]);
+  async function submit(path:string,body:Record<string,unknown>,success:string){setBusy(true);setError("");try{await studioRequest(path,token,{method:"POST",body:JSON.stringify(body)});setNotice(success);return true;}catch(caught){setError((caught as Error).message);return false;}finally{setBusy(false);}}
+  const states:Record<string,string>={unfulfilled:"De pregătit",preparing:"În pregătire",shipped:"Expediată",delivered:"Livrată"};
+  return <div className="customer-order-actions">{progress?.state&&<p><strong>{states[progress.state]||progress.state}</strong>{progress.tracking&&<> · {progress.carrier}: {progress.tracking}</>}</p>}{progress?.returnStatus&&<p>Solicitare retur: {progress.returnStatus}{progress.returnNote&&<> · {progress.returnNote}</>}</p>}
+    {status==="paid"&&!progress?.returnStatus&&!requested&&<details><summary>Solicită returul / retragerea din comandă</summary><form onSubmit={async(event)=>{event.preventDefault();const form=new FormData(event.currentTarget);if(await submit("/api/returns",{code,message:form.get("message")},"Solicitarea este înregistrată. Vei primi răspuns după analiză; rambursarea nu este automată."))setRequested(true);}}><label>Mesaj (motivul este opțional)<textarea name="message" required minLength={5} maxLength={2000} defaultValue="Solicit retragerea din această comandă." /></label><button className="studio-secondary" disabled={busy}>Înregistrează solicitarea</button></form></details>}
+    {status==="paid"&&progress?.state==="delivered"&&items?.filter(item=>!progress.reviewedProductIds?.includes(item.id)&&!reviewed.includes(item.id)).map(item=><details key={item.id}><summary>Lasă o recenzie · {item.name}</summary><form onSubmit={async(event)=>{event.preventDefault();const form=new FormData(event.currentTarget);if(await submit("/api/reviews",{code,productId:item.id,rating:Number(form.get("rating")),body:form.get("body")},"Recenzia a fost trimisă la moderare. Mulțumim!"))setReviewed(previous=>[...previous,item.id]);}}><label>Evaluare<select name="rating" defaultValue="5">{[5,4,3,2,1].map(value=><option key={value} value={value}>{value} / 5</option>)}</select></label><label>Experiența ta<textarea name="body" required minLength={5} maxLength={2000} /></label><button className="studio-secondary" disabled={busy}>Trimite recenzia verificată</button></form></details>)}
+    {notice&&<p className="form-success" role="status">{notice}</p>}{error&&<p className="form-error" role="alert">{error}</p>}
+  </div>;
+}

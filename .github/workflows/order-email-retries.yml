@@ -1,0 +1,36 @@
+name: Order email retries
+
+on:
+  schedule:
+    - cron: '*/5 * * * *'
+  workflow_dispatch:
+
+permissions: {}
+
+concurrency:
+  group: order-email-retries
+  cancel-in-progress: false
+
+jobs:
+  retry:
+    if: ${{ vars.FAURIO_URL != '' }}
+    runs-on: ubuntu-latest
+    timeout-minutes: 2
+    steps:
+      - name: Dispatch due paid-order notifications
+        env:
+          FAURIO_URL: ${{ vars.FAURIO_URL }}
+          CRON_SECRET: ${{ secrets.FAURIO_CRON_SECRET }}
+        run: |
+          node --input-type=module <<'NODE'
+          const base = new URL(process.env.FAURIO_URL);
+          if (base.protocol !== 'https:' || base.username || base.password) throw new Error('Configure an HTTPS FAURIO_URL');
+          const secret = process.env.CRON_SECRET;
+          if (!secret || secret.length < 32) throw new Error('Configure FAURIO_CRON_SECRET');
+          const result = await fetch(new URL('/api/internal/order-emails', base), {
+            method: 'POST', headers: { Authorization: `Bearer ${secret}` }, signal: AbortSignal.timeout(60000),
+          });
+          if (!result.ok) throw new Error(`Email dispatch returned ${result.status}`);
+          const summary = await result.json();
+          console.log(JSON.stringify({ processed: summary.processed, results: summary.results }));
+          NODE

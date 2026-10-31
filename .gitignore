@@ -1,46 +1,14 @@
-# Dependencies
 /node_modules/
-/.pnp
-.pnp.*
-# Keep authored Yarn tooling if the project adopts Yarn.
-/.yarn/*
-!/.yarn/patches/
-!/.yarn/plugins/
-!/.yarn/releases/
-!/.yarn/versions/
-
-# Generated builds and framework state
-/dist/
 /.next/
-/.vinext/
+/.next-build/
+/playwright-report/
+/test-results/
 /out/
-next-env.d.ts
-*.tsbuildinfo
-
-# Test output
+/dist/
 /coverage/
-
-# Package-manager logs
-npm-debug.log*
-yarn-debug.log*
-yarn-error.log*
-.pnpm-debug.log*
-
-# Local environment and keys
 .env*
 !.env.example
-.dev.vars*
-*.pem
-
-# Checkout-local tool state
-/.wrangler/
-/.sites-runtime/
-
-# Workspace scaffolding and publication archives
-/.agents/
-/.codex/
-/outputs/
-/work/
-
-# OS metadata
+*.tsbuildinfo
+npm-debug.log*
 .DS_Store
+/ATELIERIA_CODEX_MASTER_PROMPT.md

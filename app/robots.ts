@@ -1,2 +1,3 @@
 import type { MetadataRoute } from "next";
-export default function robots(): MetadataRoute.Robots { return { rules: { userAgent: "*", allow: "/", disallow: ["/admin", "/cont/profil", "/checkout"] }, sitemap: "https://fir-de-poveste-handmade.elatedpine3.chatgpt.site/sitemap.xml" }; }
+import { siteUrl } from "@/lib/site-url";
+export default function robots(): MetadataRoute.Robots { return { rules: { userAgent: "*", allow: "/", disallow: ["/admin", "/studio", "/api", "/cont", "/checkout"] }, sitemap: `${siteUrl}/sitemap.xml` }; }
