@@ -71,7 +71,7 @@ test("MOCK product publishing: uploaded photo is included in moderated product s
   expect((submitted as {product?:{image?:string}}|null)?.product?.image).toBe(src);expect((submitted as {submit?:boolean}|null)?.submit).toBe(true);
 });
 
-test("MOCK cart: multi-maker checkout submits only the selected maker and no fee surcharge",async({page})=>{
+test("MOCK cart: maker selection, no buyer surcharge and honest payment readiness",async({page})=>{
   await page.addInitScript(()=>localStorage.setItem("fir-de-poveste-cart",JSON.stringify([
     {quantity:1,product:{id:"one",name:"Vază atelier unu",shopId:"shop-one",maker:"Atelier Unu",price:100,stock:3,image:"/products/ceramica-luna.avif"}},
     {quantity:1,product:{id:"two",name:"Cană atelier doi",shopId:"shop-two",maker:"Atelier Doi",price:80,stock:2,image:"/products/ceramica-luna.avif"}}
@@ -83,7 +83,14 @@ test("MOCK cart: multi-maker checkout submits only the selected maker and no fee
   await expect(page.locator(".checkout-summary")).toContainText("Cană atelier doi");await expect(page.locator(".checkout-summary")).not.toContainText("Vază atelier unu");
   for(const [label,value] of [["Nume","Test Buyer"],["Email","fixture@example.test"],["Telefon","0700000000"],["Adresă","Adresa fictivă 1"],["Oraș","Brașov"],["Județ","Brașov"],["Cod poștal","500000"]]) await page.getByLabel(label,{exact:true}).fill(value);
   await page.getByRole("button",{name:"Continuă",exact:true}).click();
-  await page.getByRole("button",{name:/Continuă la Stripe/}).click();await expect(page.getByText("MOCK checkout boundary reached")).toBeVisible();
+  const paymentButton = page.getByRole("button",{name:/Continuă la Stripe/});
+  if (!process.env.STRIPE_SECRET_KEY?.startsWith("sk_test_") || !process.env.SUPABASE_SERVICE_ROLE_KEY || !process.env.SUPABASE_URL) {
+    await expect(paymentButton).toBeDisabled();
+    await expect(page.getByText("Plata online este indisponibilă",{exact:true})).toBeVisible();
+    expect(payload).toBeNull();
+    return;
+  }
+  await paymentButton.click();await expect(page.getByText("MOCK checkout boundary reached")).toBeVisible();
   expect((payload as {items:{id:string}[]}|null)?.items).toEqual([{id:"two",quantity:1}]);
 });
 

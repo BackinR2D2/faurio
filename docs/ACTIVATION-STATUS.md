@@ -26,15 +26,17 @@ Setările Gmail neconfidențiale și providerul SMTP au fost salvate în `.env.l
 
 Cheia TEST a fost verificată direct prin Stripe API. Connect este accesibil; la verificare nu existau connected accounts sau endpointuri webhook. După migrare a fost activat `STRIPE_CONNECT_ENABLED=true` local. Cheile live rămân refuzate de aplicație.
 
-Webhook-urile persistente necesită URL-ul public canonic, apoi cele două secrete proprii endpointurilor. Un secret local existent nu demonstrează că există un webhook în Stripe. Onboardingul real al unui seller, plata test găzduită, transferul/application fee, refundul și emailul după plată rămân de verificat end-to-end. Nu s-au creat identități de vânzători și nu s-au ocolit confirmările conturilor.
+Au fost create două webhook-uri Stripe TEST pentru `https://faurio-marketplace.netlify.app/api/stripe/webhook` și `/api/stripe/connect`, cu evenimentele din ghid. Secretele lor distincte sunt salvate în `.env.netlify.local` (ignorat de Git, mod 0600) și în variabilele Netlify pentru producție. Configurația locală din `.env.local` rămâne pentru dezvoltare. Existența endpointurilor nu demonstrează livrarea unui eveniment. Onboardingul real al unui seller, plata test găzduită, transferul/application fee, refundul și emailul după plată rămân de verificat end-to-end. Nu s-au creat identități de vânzători și nu s-au ocolit confirmările conturilor.
 
-`CRON_SECRET` a fost generat și salvat local, fără a-l publica. Retry-ul automat nu este activ până când hostingul și GitHub Actions primesc URL-ul/secretul corespunzătoare.
+`CRON_SECRET` a fost generat și salvat local, fără a-l publica. Netlify și secretul GitHub Actions `FAURIO_CRON_SECRET` au fost configurate, împreună cu variabila `FAURIO_URL`. Retry-ul necesită deploy funcțional și SMTP valid; nu dovedește livrarea în inbox.
 
 ## GitHub și hosting
 
 Repository privat creat: [BackinR2D2/faurio](https://github.com/BackinR2D2/faurio). Remote-ul `origin` este configurat. Fișierele de mediu și documentul local de instrucțiuni sunt excluse din Git. Scanarea surselor și a istoricului nu a găsit credențialele curente sau tiparele de chei private verificate; aceasta nu constituie un audit independent complet.
 
-Publicarea pe Netlify și conectarea Git-deploy necesită autorizarea contului de hosting și a accesului GitHub la acest repository. Nu există încă un URL de producție confirmat. Nu confunda build-ul local sau prezența workflow-urilor cu un deploy ori un pipeline extern verificat.
+Contul Netlify a fost autorizat și planul Free confirmat. Proiectul `faurio-marketplace` este creat și legat prin CLI de repository-ul privat, cu o cheie SSH read-only pentru acel repository și un webhook GitHub pentru evenimente push. URL rezervat: `https://faurio-marketplace.netlify.app`. Variabilele serviciilor au fost copiate după acord explicit, exclusiv în contextul production; nu au fost configurate secrete pentru previews. Primul deploy este încă de verificat; un URL rezervat nu este dovada unui deploy funcțional.
+
+Primul GitHub CI a trecut build/typecheck/lint/testele unitare, dar a identificat două teste UI care presupuneau existența cheilor Stripe/DB în CI. Testul a fost corectat pentru a verifica butonul dezactivat în mediul neconfigurat, fără a introduce chei reale sau bypass în aplicație. Fluxul mock complet rămâne verificat local, unde configurația backend există. Verificările pe catalogul real sunt omise explicit în CI fără staging securizat.
 
 ## Verificări de cod
 

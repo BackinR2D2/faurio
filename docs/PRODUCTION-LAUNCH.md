@@ -56,7 +56,7 @@ git remote add origin ADRESA-REPOSITORY-ULUI-TAU
 git push -u origin NUMELE-BRANCHULUI-TAU
 ```
 
-Ultimele două comenzi sunt exemple, nu au fost executate. Commitul trebuie să includă sursele/migrările/testele/configurațiile necesare, nu doar ultimul diff. Build-urile și node_modules nu se comit.
+Comenzile sunt exemple pentru clone noi. Repository-ul existent are deja remote și sursele au fost încărcate pe `main`. Commitul trebuie să includă sursele/migrările/testele/configurațiile necesare, nu doar ultimul diff. Build-urile, `.netlify`, node_modules și fișierele de mediu nu se comit.
 
 ## 6. Hosting și redeploy la fiecare push
 
