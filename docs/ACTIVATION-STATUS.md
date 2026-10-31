@@ -38,6 +38,8 @@ Contul Netlify a fost autorizat și planul Free confirmat. Proiectul `faurio-mar
 
 Netlify a publicat automat commitul aplicației `5316793`; webhook-ul GitHub push a primit HTTP 204, iar deploy-ul a ajuns în starea `ready`. Cele patru teste HTTPS desktop/mobil de producție au trecut, inclusiv pagini, layout fără overflow, căutare, paginare și refuzul accesului anonim. Cele trei căutări din tabel au fost repetate pe URL-ul public cu `engine: groq`, aceleași rezultate și constrângeri verificate.
 
+Primul smoke GitHub a identificat un timeout cumulativ: opt navigări împărțeau un singur test de 45 secunde și așteptau inclusiv încărcarea resurselor opționale. Suita a fost separată în verificări individuale pe rute, după DOMContentLoaded și afișarea conținutului principal, fără eliminarea aserțiunilor HTTP/layout. Cele 20 de cazuri rezultate au trecut local pe site-ul public. Verificarea search cere acum explicit `engine: groq`.
+
 Ambele endpointuri Stripe publice au acceptat probe sintetice semnate (HTTP 200) și au refuzat probe nesemnate (HTTP 400). Evenimentele sintetice au un tip necunoscut, ignorat de aplicație: nu s-au creat comenzi/plăți și nu reprezintă dovada livrării unui eveniment real de la Stripe.
 
 Primul GitHub CI a trecut build/typecheck/lint/testele unitare, dar a identificat două teste UI care presupuneau existența cheilor Stripe/DB în CI. Testul a fost corectat pentru a verifica butonul dezactivat în mediul neconfigurat, fără a introduce chei reale sau bypass în aplicație. Fluxul mock complet rămâne verificat local, unde configurația backend există. Verificările pe catalogul real sunt omise explicit în CI fără staging securizat.
