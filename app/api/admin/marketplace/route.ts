@@ -7,7 +7,7 @@ export const GET = api(async (request) => {
   const page = Math.min(10000, Math.max(1, Math.trunc(Number(params.get("page")) || 1)));
   const kind = params.get("kind") === "products" ? "products" : "shops";
   const listingStatus = ["pending_review", "draft", "published", "archived"].find((status) => status === params.get("status")) || "pending_review";
-  const query = kind === "shops" ? admin.from("shops").select("id,name,slug,status,location,created_at", { count: "exact" }).eq("is_legacy", false) : admin.from("products").select("id,name,shop_id,listing_status,created_at", { count: "exact" }).eq("listing_status", listingStatus);
+  const query = kind === "shops" ? admin.from("shops").select("id,name,slug,status,location,created_at,shop_pages(draft)", { count: "exact" }).eq("is_legacy", false) : admin.from("products").select("id,name,shop_id,listing_status,created_at,product_type,category,price,stock,material,color,description,image", { count: "exact" }).eq("listing_status", listingStatus);
   const { data, error, count } = await query.order("created_at", { ascending: false }).order("id").range((page - 1) * 20, page * 20 - 1);
   if (error?.code !== "PGRST103") databaseError(error);
   const { data: audit, error: auditError } = await admin.from("marketplace_audit_log").select("id,action,subject_id,shop_id,reason,created_at").order("created_at", { ascending: false }).limit(30);

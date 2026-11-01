@@ -1,26 +1,27 @@
 # Căutare Faurio
 
-## Înainte
+Fiecare căutare nevidă este interpretată pe server prin Groq, cu modelul implicit `openai/gpt-oss-120b`. Nu este necesară o cheie sau un abonament OpenAI. UI-ul prezintă rezultatele, nu tehnologia folosită.
 
-`lib/search-intent.ts` interpreta româna prin expresii regulate, extrăgea tip/categorie/buget/material/culoare și aplica interogări Supabase. Termenii rămași erau căutare full-text AND. Nu exista apel AI; ordonarea Relevanță folosea rating/număr de recenzii. Propozițiile lungi puteau deveni prea restrictive, iar interpretarea depindea de dicționare fixe.
+## Selectarea produselor
 
-## Acum
+1. Serverul citește toate produsele publicate din `catalog_products`, în loturi de 500. Indexul se păstrează 30 de secunde. Modelul primește tipurile disponibile, intervalele de preț, stocul agregat și exemple reprezentative, nu clienți sau comenzi.
+2. Modelul interpretează maximum 1.200 caractere într-o schemă JSON strictă. O poveste generează tipuri potrivite și motive practice: pentru un profesor, jurnale, semne de carte sau organizare. O cerere precisă rămâne precisă: pahare nu înseamnă căni, iar un tricou absent nu este înlocuit cu decorațiuni.
+3. Validarea Zod și parserul local protejează bugetele și cerințele explicite. Tipurile recomandate trebuie să existe în taxonomia publicată. Pregătirea rapidă și personalizarea nu sunt presupuse fără dovezi în cerere.
+4. PostgreSQL aplică restricțiile pe întregul catalog publicat. Relevanța combină termenii interpretați cu atributele reale. Pentru povești, familiile de produse sunt diversificate înainte de paginare, astfel încât edițiile aceluiași produs să nu umple prima pagină. Sortarea explicită după preț rămâne globală.
+5. Sunt returnate numai produse reale, active, moderate și publicate. Nu există completare cu produse fără legătură.
 
-1. Formularele și API-ul acceptă până la 1.200 caractere.
-2. Serverul citește taxonomia produselor publicate din DB, nu inventează tipuri și nu trimite întregul catalog sau comenzile către model.
-3. Groq extrage JSON strict: obiectele cerute, cerințele obligatorii și vocabularul semantic de relevanță. Model implicit `openai/gpt-oss-20b`, găzduit de Groq; nu cere un abonament separat sau o cheie OpenAI.
-4. Zod verifică rezultatul. Tipurile necunoscute sunt refuzate. Parserul determinist păstrează bugetele explicite, tipurile cunoscute, culoarea și celelalte constrângeri; un tricou nu devine o vază. Cererile vagi fără sens utilizabil sau intervalele contradictorii dau zero rezultate.
-5. `search_marketplace_catalog` aplică toate constrângerile în PostgreSQL pe întregul catalog publicat. Scorul semantic explicabil folosește vocabularul generat de AI în nume/tip, material/culoare și descriere/metadate. Sortarea și numărul total se calculează înainte de paginare. Nu este vector search și nu este un LLM care selectează IDs din prima pagină.
-6. Rezultatele sunt doar rânduri reale, active, moderate, ale atelierelor publicate. Zero potriviri înseamnă zero rezultate, fără completare cu produse ieftine fără legătură.
+Nu este vector search și modelul nu inspectează fiecare fotografie. Rezumatele pe tip au maximum patru familii exemplu; relevanța trebuie evaluată și pentru categorii noi. Interpretarea este probabilistică, nu o garanție de înțelegere perfectă a oricărei povești.
 
-## Activare gratuită în limita cotelor
+## Configurare și indisponibilitate
 
-Creează o cheie la [Groq Console](https://console.groq.com/keys), pune `GROQ_API_KEY` exclusiv în `.env.local` / secretele serverului. Aplică migrările marketplace și `202610310001_ai_search.sql`. Opțional: `GROQ_MODEL`, `GROQ_DAILY_SEARCH_LIMIT=200`, `SEARCH_AI_ENABLED=true`. Modelul, disponibilitatea și limitele planului gratuit se verifică în cont: [rate limits](https://console.groq.com/docs/rate-limits), [structured outputs](https://console.groq.com/docs/structured-outputs). Nu există un angajament de utilizare nelimitată sau latență sub 2 secunde pentru apelurile AI.
+`GROQ_API_KEY` și `GROQ_MODEL=openai/gpt-oss-120b` sunt exclusiv server-side. Aplică migrările marketplace și `202610310001_ai_search.sql`. `GROQ_DAILY_SEARCH_LIMIT=200` limitează cererile noi, maximum 1.000; cache-ul comun este de o oră, legat de model și amprenta catalogului.
 
-Apelurile au timeout de 7 secunde, maximum 1.200 tokenuri de răspuns, cache comun de o oră și o cotă DB zilnică atomică, implicit 200, maximum configurabil 1.000. Se contorizează și încercările eșuate; limita se raportează la ziua DB. Aceasta protejează bugetul global, nu înlocuiește firewall/CAPTCHA sau limitarea traficului pe hosting. Dacă nu există cheie, schema lipsește, providerul refuză sau cota este epuizată, căutarea exactă rămâne funcțională și UI nu pretinde utilizarea AI.
+Timeout: 12 secunde; maximum 2.000 tokenuri de răspuns. Dacă lipsesc cheia, schema sau cota, ori furnizorul refuză cererea, căutarea returnează HTTP 503 și permite reîncercarea. Nu revine în tăcere la reguli și nu pretinde că lipsa serviciului înseamnă lipsă de produse. Catalogul fără query rămâne navigabil.
 
-Emailurile și numerele de telefon evidente se maschează înainte de trimitere. Nu introduce date personale în căutări; mascarea nu garantează anonimizarea unei povești libere. Verifică Data Controls/retention din [Groq](https://console.groq.com/docs/your-data) și politica de confidențialitate înainte de înscrieri publice. Nicio cheie și niciun profil/istoric de comandă nu ajunge în browserul public sau în prompt.
+Planul gratuit are cote și nu oferă disponibilitate nelimitată: [Groq rate limits](https://console.groq.com/docs/rate-limits), [structured outputs](https://console.groq.com/docs/structured-outputs). `SEARCH_AI_ENABLED=false` este numai un comutator operațional pentru testarea indisponibilității, nu un motor alternativ.
 
-## Limite urmărite
+Emailurile și telefoanele evidente sunt mascate înainte de trimitere, fără garanția anonimizării unei povești. Nu introduce date personale. Verifică [politica Groq privind datele](https://console.groq.com/docs/your-data) înainte de extinderea pilotului.
 
-Extracția LLM este probabilistică, nu înțelegere perfectă a oricărei povești. Parserul protejează constrângerile cunoscute și substantivele precise frecvente; taxonomia și testele trebuie extinse pentru tipuri noi. Relevanța lexicală extinsă de AI nu oferă încă embeddings, învățare din clicuri, mesaje conversaționale cu context sau analiză vizuală. Preferăm false-negative în locul recomandărilor precise false. Testele mock nu dovedesc calitatea modelului live; folosește un set evaluat de cereri reale și verifică rezultatele manual înainte de lansare.
+## Verificare
+
+`npx tsx scripts/check-groq.ts` face apeluri reale și nu modifică DB. Testele `tests/e2e/ai-recommendations.spec.ts` verifică separat interpretarea, produsele din DB, bugetul, diversitatea și paginarea. Testele unitare cu răspunsuri simulate nu înlocuiesc evaluarea furnizorului live.

@@ -82,15 +82,13 @@ h1, h2, h3 { font-family: "Oswald Variable", Oswald, Impact, sans-serif; font-we
 .wash-one { top: -22vw; right: -12vw; width: 62vw; height: 62vw; background: rgba(157,187,174,.48); }
 .wash-two { right: 21%; bottom: -34vw; width: 56vw; height: 56vw; border: 1px solid rgba(24,143,167,.16); box-shadow: 0 0 0 78px rgba(118,159,182,.08), 0 0 0 156px rgba(213,214,170,.09); }
 .home-copy { position: relative; z-index: 3; max-width: 720px; }
-.home-kicker { display: flex; align-items: center; gap: 9px; margin: 0 0 20px; color: #38575e; font-size: 11px; font-weight: 800; letter-spacing: .11em; text-transform: uppercase; }
-.home-kicker svg { width: 16px; color: var(--cyan); }
 .home-title { max-width: 710px; margin: 0 0 24px; font-size: clamp(56px,5.3vw,90px); font-weight: 520; letter-spacing: -.035em; line-height: .94; text-transform: none; }
-.home-title span { display: block; padding-bottom: .03em; }
-.home-title span:last-child { margin-top: 2px; color: var(--cyan); font-weight: 430; }
+.home-title span { color: var(--cyan); font-weight: 430; }
 .home-lead { max-width: 550px; margin: 0 0 28px; color: #41595d; font-size: 16px; line-height: 1.65; }
-.home-search-box { display: grid; max-width: 680px; min-height: 76px; grid-template-columns: auto 1fr auto; align-items: center; gap: 14px; border: 1px solid rgba(16,47,56,.13); border-radius: 22px; background: rgba(255,254,250,.94); padding: 10px 11px 10px 21px; box-shadow: 0 20px 60px rgba(16,47,56,.11); backdrop-filter: blur(16px); }
+.home-search-box { display: grid; max-width: 680px; min-height: 76px; grid-template-columns: auto minmax(0,1fr) auto; align-items: center; gap: 14px; border: 1px solid rgba(16,47,56,.13); border-radius: 22px; background: rgba(255,254,250,.94); padding: 10px 11px 10px 21px; box-shadow: 0 20px 60px rgba(16,47,56,.11); backdrop-filter: blur(16px); }
 .home-search-box > svg { color: var(--cyan); }
-.home-search-box textarea { width: 100%; resize: none; border: 0; outline: 0; background: transparent; padding: 5px 0; color: var(--ink); font-size: 15px; line-height: 1.45; }
+.home-search-box textarea { display: block; min-width: 0; width: 100%; max-height: 160px; overflow-y: auto; resize: none; border: 0; outline: 0; background: transparent; padding: 5px 0; color: var(--ink); font-size: 15px; line-height: 1.45; }
+.home-search-box textarea:placeholder-shown { overflow: hidden; white-space: nowrap; text-overflow: ellipsis; }
 .home-search-box textarea::placeholder { color: #75888a; }
 .home-search-box button { display: grid; width: 54px; height: 54px; place-items: center; border: 0; border-radius: 50%; background: var(--cyan); color: white; cursor: pointer; transition: transform .2s, background .2s; }
 .home-search-box button:hover { transform: rotate(-4deg) scale(1.04); }
@@ -568,7 +566,7 @@ h1, h2, h3 { font-family: "Oswald Variable", Oswald, Impact, sans-serif; font-we
   .home-art { position: absolute; z-index: 0; top: 13%; right: -90px; min-height: 330px; width: 360px; opacity: .35; }
   .artisan-stage { inset: 0; }
   .home-copy { z-index: 2; }
-  .home-search-box { grid-template-columns: auto 1fr auto; }
+  .home-search-box { grid-template-columns: auto minmax(0,1fr) auto; }
   .home-examples { display: none; }
   .catalog-head { grid-template-columns: 1fr; }
   .catalog-search { align-self: auto; }
@@ -611,10 +609,9 @@ h1, h2, h3 { font-family: "Oswald Variable", Oswald, Impact, sans-serif; font-we
 }
 
 @media (max-width: 560px) {
-  .home-kicker { margin-bottom: 16px; font-size: 9px; }
   .home-title { margin-bottom: 18px; font-size: clamp(44px,14vw,60px); line-height: .96; }
   .home-lead { margin-bottom: 22px; font-size: 13px; line-height: 1.55; }
-  .home-search-box { grid-template-columns: 1fr auto; padding-left: 12px; }
+  .home-search-box { grid-template-columns: minmax(0,1fr) auto; padding-left: 12px; }
   .home-search-box > svg { display: none; }
   .home-search-box textarea { font-size: 12px; }
   .catalog-page, .product-page, .cart-page, .account-page, .blog-page, .simple-list-page { padding-right: 16px; padding-left: 16px; }

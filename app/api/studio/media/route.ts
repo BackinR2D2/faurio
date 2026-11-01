@@ -1,12 +1,11 @@
 import { z } from "zod";
-import { api, ApiError, databaseError, requireShop } from "@/lib/marketplace/http";
+import { api, ApiError, databaseError, requireSameOrigin, requireShop } from "@/lib/marketplace/http";
 import { getSupabaseAdmin } from "@/lib/supabase-server";
 import { MAX_UPLOAD_BYTES, optimizeShopImage } from "@/lib/marketplace/media";
 
 export const runtime = "nodejs";
 export const POST = api(async (request) => {
-  const origin = request.headers.get("origin");
-  if (origin && origin !== new URL(request.url).origin) throw new ApiError(403, "ORIGIN_DENIED", "Origine nepermisă.");
+  requireSameOrigin(request);
   const parsed = z.uuid().safeParse(new URL(request.url).searchParams.get("shop"));
   if (!parsed.success) throw new ApiError(400, "INVALID_SHOP", "Atelier invalid.");
   const auth = await requireShop(request, parsed.data, true);

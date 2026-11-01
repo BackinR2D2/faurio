@@ -8,7 +8,7 @@ import { useAuth } from "@/components/auth-provider";
 import { stateLabels, type StudioShop } from "@/lib/marketplace/contracts";
 import { studioRequest } from "@/lib/marketplace/client";
 
-type StudioContextValue = { shop: StudioShop; token: string };
+type StudioContextValue = { shop: StudioShop; token: string; refresh: () => Promise<void> };
 const StudioContext = createContext<StudioContextValue | null>(null);
 export function useStudio() {
   const context = useContext(StudioContext);
@@ -24,6 +24,11 @@ export function StudioShell({ children }: { children: ReactNode }) {
   const [dataOwner, setDataOwner] = useState<string | null>(null);
   const [shopId, setShopId] = useState("");
   const [error, setError] = useState("");
+  async function refresh() {
+    if (!accessToken) return;
+    const result = await studioRequest<{ shops: StudioShop[] }>("/api/studio", accessToken);
+    setShops(result.shops);
+  }
   useEffect(() => {
     if (!accessToken || !user) return;
     const controller = new AbortController();
@@ -43,6 +48,6 @@ export function StudioShell({ children }: { children: ReactNode }) {
   if (!shops || dataOwner !== user.id) return <main className="page-main studio-loading" role="status">Se citesc atelierele tale…</main>;
   const shop = shops.find((item) => item.id === shopId);
   if (!shop) return <main className="page-main studio-empty"><p className="eyebrow">Un spațiu pentru ideile tale</p><h1>Prima ta colecție<br />începe aici.</h1><p>Deschide un atelier, apoi adaugă-i povestea și produsele.</p><Link className="primary-button" href="/sell">Creează un atelier <ArrowUpRight /></Link></main>;
-  const links = [{ href: "/studio", label: "Atelier", icon: Store }, { href: "/studio/orders", label: "Comenzi", icon: Package }, { href: "/studio/payments", label: "Încasări", icon: CreditCard }, { href: "/studio/products", label: "Produse", icon: Boxes }, { href: "/studio/appearance", label: "Aspect & poveste", icon: LayoutTemplate }];
-  return <main className="page-main studio-workspace"><aside className="studio-sidebar"><Link href="/studio" className="studio-wordmark">Studio<span>Faurio</span></Link><label className="studio-shop-select">Atelierul curent<select value={shopId} onChange={(event) => { setShopId(event.target.value); router.replace(`${path}?shop=${event.target.value}`); }}>{shops.map((item) => <option key={item.id} value={item.id}>{item.name}</option>)}</select></label><span className={`studio-status status-${shop.status}`}>{stateLabels[shop.status]}</span><nav aria-label="Studio">{links.map(({ href, label, icon: Icon }) => <Link key={href} href={`${href}?shop=${shopId}`} aria-current={path === href ? "page" : undefined}><Icon size={18} />{label}</Link>)}</nav><Link href={`/makers/${shop.slug}`} className="studio-public-link">Pagina publică <ArrowUpRight size={16} /></Link><Link href="/sell" className="studio-public-link">Adaugă un atelier</Link></aside><div className="studio-content"><StudioContext.Provider key={`${user.id}:${shop.id}`} value={{ shop, token: accessToken }}>{children}</StudioContext.Provider></div></main>;
+  const links = [{ href: "/studio", label: "Atelier", icon: Store }, { href: "/studio/orders", label: "Comenzi", icon: Package }, { href: "/studio/payments", label: "Încasări", icon: CreditCard }, { href: "/studio/products", label: "Produse", icon: Boxes }, { href: "/studio/appearance", label: "Aspect & poveste", icon: LayoutTemplate }].filter(link => shop.status !== "closed" || !["/studio/products", "/studio/appearance"].includes(link.href));
+  return <main className="page-main studio-workspace"><aside className="studio-sidebar"><Link href="/studio" className="studio-wordmark">Studio<span>Faurio</span></Link><label className="studio-shop-select">Atelierul curent<select value={shopId} onChange={(event) => { setShopId(event.target.value); router.replace(`${path}?shop=${event.target.value}`); }}>{shops.map((item) => <option key={item.id} value={item.id}>{item.name}{item.status === "closed" ? " (închis)" : ""}</option>)}</select></label><span className={`studio-status status-${shop.status}`}>{stateLabels[shop.status]}</span><nav aria-label="Studio">{links.map(({ href, label, icon: Icon }) => <Link key={href} href={`${href}?shop=${shopId}`} aria-current={path === href ? "page" : undefined}><Icon size={18} />{label}</Link>)}</nav>{shop.status === "active" && <Link href={`/makers/${shop.slug}`} className="studio-public-link">Pagina publică <ArrowUpRight size={16} /></Link>}<Link href="/sell" className="studio-public-link">Adaugă un atelier</Link></aside><div className="studio-content"><StudioContext.Provider key={`${user.id}:${shop.id}`} value={{ shop, token: accessToken, refresh }}>{children}</StudioContext.Provider></div></main>;
 }

@@ -2,7 +2,7 @@
 
 Magazin B2C pentru produse handmade, în evoluție către un marketplace cu ateliere independente. Next.js, React, Supabase, Three.js, GSAP și Stripe.
 
-Pilot public, plăți exclusiv TEST: [faurio-marketplace.netlify.app](https://faurio-marketplace.netlify.app). Stare și limitări: [activarea serviciilor](docs/ACTIVATION-STATUS.md). Emailurile și onboardingul vânzătorilor nu sunt încă validate end-to-end.
+Pilot public, plăți exclusiv TEST: [faurio-marketplace.netlify.app](https://faurio-marketplace.netlify.app). Stare și limitări: [activarea serviciilor](docs/ACTIVATION-STATUS.md). Înscrierea și confirmarea emailului sunt verificate; onboardingul Stripe și emailul unei comenzi achitate mai necesită validare end-to-end.
 
 ## Emailuri și identitate
 
@@ -22,19 +22,19 @@ Termenii necunoscuți rămân obligatorii chiar când cererea conține buget sau
 - `/makers` și `/makers/[slug]` — doar ateliere active și versiuni publicate;
 - `/admin/marketplace` — aprobări, retragerea listărilor, suspendări și audit;
 - RLS și funcții SQL testate cu două identități; view-uri publice fără ciorne;
-- fallback 3D static, încărcare la cerere pe mobil, pauză offscreen și suport fără WebGL;
+- carusel cu patru modele 3D aleatorii, încărcate pe rând, rotație/reset/pauză, fallback static și activare la cerere pe mobil;
 - parser cu intervale de preț, excluderi de materiale, personalizare ca filtru strict și explicații pentru monede/deadline-uri neconfirmate.
 
-**Stare verificată:** cele șapte migrări sunt aplicate în Supabase, iar căutarea Groq a fost verificată pe catalogul real. [ACTIVATION-STATUS.md](docs/ACTIVATION-STATUS.md) descrie verificările și pașii încă nefinalizați pentru Gmail, onboarding/webhook-uri Stripe și hosting. Nu rerula migrările, schema de bază sau seed-ul peste datele existente. [Ghid de lansare](docs/PRODUCTION-LAUNCH.md).
+**Stare verificată:** cele opt migrări sunt aplicate în Supabase, iar căutarea Groq a fost verificată pe catalogul real. Contul confirmat, profilul/coșul/favoritele, uploadul, moderarea, publicarea și închiderea unui atelier QA au fost verificate pe backendul găzduit. [ACTIVATION-STATUS.md](docs/ACTIVATION-STATUS.md) distinge verificările reale de testele simulate și de pașii financiari încă nefinalizați. Nu rerula migrările, schema de bază sau seed-ul peste datele existente. [Ghid de lansare](docs/PRODUCTION-LAUNCH.md).
 
-**Pilot financiar:** Stripe Connect Express cu checkout per atelier, 5,5% comision, comenzi/expediere și refund reconciliation sunt implementate; baza de date este activată, dar onboardingul și webhook-urile Stripe mai necesită configurare/testare. Uploaduri proprii, retururi, recenzii verificate/moderate și suport sunt incluse. Modul live este refuzat. Medusa, configuratorul de preț și plata comună multi-maker rămân milestone-uri deschise.
+**Pilot financiar:** Stripe Connect Express cu checkout per atelier, 5,5% comision, comenzi/expediere și refund reconciliation sunt implementate; baza de date și endpointurile webhook sunt configurate. Onboardingul, plata/transferul și rambursarea necesită încă verificare end-to-end. Uploaduri proprii, retururi, recenzii verificate/moderate și suport sunt incluse. Modul live este refuzat. Medusa, configuratorul de preț și plata comună multi-maker rămân milestone-uri deschise.
 
 [Lansare și Git-deploy](docs/PRODUCTION-LAUNCH.md) · [Model business/ST1/ST2](docs/BUSINESS-MODEL.md) · [Căutare Groq](docs/AI-SEARCH.md) · [Instrucțiuni istorice](docs/DEPLOYMENT.md) · [Arhitectură și ADR](docs/adr/marketplace-architecture.md) · [Plan și stadiu](docs/implementation-plan.md) · [Raport teste](docs/TEST-REPORT.md) · [Prezentare ST3](docs/ST3-PRESENTATION.md).
 
 ## Funcționalități
 
 - căutare strictă în limbaj natural, fără rezultate aproximative pentru cereri precise;
-- 720 de produse seed, fotografii reprezentative, search AI opțional, catalog paginat server-side, filtre, sortare, favorite și pagini individuale;
+- 720 de produse seed, fotografii reprezentative, căutare Groq obligatorie pentru query-uri nevide, catalog paginat server-side, filtre, sortare, favorite și pagini individuale;
 - cont client prin Supabase Auth și stare sincronizată pentru coș și favorite; recovery cu formular de parolă nouă implementat; sesiunea browser/bearer rămâne, fără cookie SSR;
 - profil, adresă, preferințe și istoric de comenzi;
 - coș persistent, cod promoțional `POVESTE10` și checkout;

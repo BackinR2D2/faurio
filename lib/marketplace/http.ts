@@ -3,6 +3,7 @@ import type { z } from "zod";
 import { getRequestAuth } from "@/lib/supabase-auth-server";
 import { getSupabaseAdmin } from "@/lib/supabase-server";
 import { ZodError } from "zod";
+import { isSameOrigin } from "./origin";
 
 export class ApiError extends Error {
   constructor(public status: number, public code: string, message: string) { super(message); }
@@ -24,8 +25,7 @@ export function databaseError(error: { code?: string; message: string } | null) 
 }
 
 export async function readJson<T>(request: Request, schema: z.ZodType<T>): Promise<T> {
-  const origin = request.headers.get("origin");
-  if (origin && origin !== new URL(request.url).origin) throw new ApiError(403, "ORIGIN_DENIED", "Cerere dintr-o origine nepermisă.");
+  requireSameOrigin(request);
   if (Number(request.headers.get("content-length") || 0) > 65536) throw new ApiError(413, "BODY_TOO_LARGE", "Formularul este prea mare.");
   const source = await request.text();
   if (source.length > 65536) throw new ApiError(413, "BODY_TOO_LARGE", "Formularul este prea mare.");
@@ -34,6 +34,12 @@ export async function readJson<T>(request: Request, schema: z.ZodType<T>): Promi
   const result = schema.safeParse(value);
   if (!result.success) throw new ApiError(400, "VALIDATION_ERROR", result.error.issues[0]?.message || "Date invalide.");
   return result.data;
+}
+
+export function requireSameOrigin(request: Request) {
+  if (!isSameOrigin(request, { trustedProxy: process.env.NETLIFY === "true" || Boolean(process.env.VERCEL), siteUrl: process.env.NEXT_PUBLIC_SITE_URL })) {
+    throw new ApiError(403, "ORIGIN_DENIED", "Cerere dintr-o origine nepermisă.");
+  }
 }
 
 export function api(handler: (request: Request) => Promise<Response>) {
@@ -66,10 +72,14 @@ export async function requireShop(request: Request, shopId: string, write = fals
   return auth;
 }
 
+export function isOperatorUser(user: { email?: string; email_confirmed_at?: string }) {
+  const emails = (process.env.ADMIN_EMAILS || "").split(",").map((email) => email.trim().toLowerCase()).filter(Boolean);
+  return Boolean(user.email_confirmed_at && emails.includes((user.email || "").toLowerCase()));
+}
+
 export async function requireOperator(request: Request) {
   const auth = await requireAuth(request);
-  const emails = (process.env.ADMIN_EMAILS || "").split(",").map((email) => email.trim().toLowerCase()).filter(Boolean);
-  if (!auth.user.email_confirmed_at || !emails.includes((auth.user.email || "").toLowerCase())) throw new ApiError(403, "OPERATOR_REQUIRED", "Acces rezervat administratorului.");
+  if (!isOperatorUser(auth.user)) throw new ApiError(403, "OPERATOR_REQUIRED", "Acces rezervat administratorului.");
   const admin = getSupabaseAdmin();
   if (!admin) throw new ApiError(503, "DATABASE_UNAVAILABLE", "Baza de date nu este configurată.");
   return { ...auth, admin };

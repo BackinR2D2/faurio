@@ -30,7 +30,7 @@ export function SellerApplication() {
       <label>Adresa atelierului<span className="slug-input"><span>/makers/</span><input name="slug" required minLength={4} maxLength={60} pattern="[a-z0-9][a-z0-9-]{2,58}[a-z0-9]" placeholder="studio-de-lut" /></span><small>Litere mici, cifre și cratime. Adresa rămâne stabilă după creare.</small></label>
       <div className="studio-form-row"><label>Oraș / regiune<input name="location" maxLength={100} placeholder="Brașov" /></label><label>Cod țară<input name="country" required defaultValue="RO" pattern="[A-Za-z]{2}" maxLength={2} /></label></div>
       <label className="studio-check"><input type="checkbox" required /><span>Accept <Link href="/sell/terms" target="_blank">condițiile pentru creatori</Link> și trimit atelierul pentru verificare.</span></label>
-      <p className="form-notice">Listare gratuită. Comision de 5,5% doar pe produsele achitate, după reduceri și fără transport. Aprobarea atelierului și verificarea Stripe Connect sunt necesare înainte de încasări. Modul curent este Stripe test.</p>
+      <p className="seller-review-note">Echipa Faurio verifică atelierul și produsele. După aprobare, conectezi Stripe pentru încasări.</p>
       {error && <p className="form-error" role="alert">{error}</p>}<button className="primary-button" disabled={busy}>{busy ? "Se trimite…" : <>Trimite atelierul <ArrowUpRight /></>}</button>
     </form>}</section>
   </main>;

@@ -1,4 +1,19 @@
-# Activare Faurio — 31 octombrie 2026
+# Activare Faurio — 1 noiembrie 2026
+
+## Verificare curentă a pilotului
+
+- Migrarea `202611010001_shop_lifecycle.sql` a fost aplicată în SQL Editor pe `ae_proj`, după aprobare. Execuția a returnat Success. Accesul anonim la noua funcție este refuzat; înainte de introducerea fixturelor QA, catalogul păstra 720 produse și 2 comenzi.
+- Titularul a confirmat primirea emailului de înscriere și deschiderea linkului. Autentificarea reală a contului QA confirmat și citirea profilului au trecut.
+- Profilul, coșul și favoritele au fost salvate și recitite din DB, inclusiv după o sesiune nouă. A fost creat un atelier QA explicit etichetat TEST, cu pagină personalizată, moderare, publicare și produs aprobat. Uploadul real în Storage și servirea WebP au trecut după remedierea AVIF/HEIF.
+- Rolul de operator al contului QA a fost autorizat de titular numai pe serverul loopback `127.0.0.1:3102`. Nu a fost adăugat în allowlist-ul Netlify. Atelierele obișnuite necesită în continuare verificarea unui operator confirmat din `ADMIN_EMAILS`.
+- Închiderea unui atelier QA nou a fost verificată prin interfață și starea sa în DB. Pagina publică nu mai este disponibilă. Nu s-au închis atelierele existente ale utilizatorilor; istoricul rămâne păstrat.
+- Căutarea folosește `openai/gpt-oss-120b`, indexul întregului catalog publicat și constrângeri SQL. Povestea profesorului recomandă jurnale, semne de carte și organizare, până la 250 lei. Cererea de tricou maro până la 100 lei returnează zero produse; paharele până la 100 lei nu sunt înlocuite cu alte tipuri. Indisponibilitatea nu activează un motor alternativ fără model.
+- Homepage-ul are patru obiecte 3D distincte alese aleatoriu, câte un model încărcat/randat, controale de rotație/reset/pauză și activare la cerere pe mobil. Verificările celor patru modele, ale alinierii și ale lipsei de overflow au trecut pe desktop și mobil.
+- Au trecut 80 teste unitare/integration locale, 58 teste browser principale, două teste de indisponibilitate și două teste live autentificate de moderare/închidere. Lint, TypeScript și buildul de producție au trecut. Publicarea versiunii curente se verifică separat; probele simulate nu sunt considerate plăți sau emailuri reale.
+
+**Poarta rămasă pentru validarea completă a plăților:** titularul trebuie să finalizeze personal crearea/onboardingul contului Stripe Connect TEST. Automatizarea acestui pas a fost blocată de politica de siguranță. Eroarea de origine a formularului QA a fost remediată și verificată: cereri legitime acceptate, origini străine refuzate. Plata găzduită, application fee/transfer, emailul comenzii, rambursarea și reconcilierea necesită încă verificare end-to-end; nu sunt declarate finalizate.
+
+## Jurnal anterior — 31 octombrie 2026
 
 ## Supabase și căutare: activate
 
@@ -18,9 +33,15 @@ Cheia Groq a trecut cele trei evaluări reale. Verificarea ulterioară prin `/ap
 
 Rezultatele reflectă catalogul de la verificare, nu garanții pentru inventarul viitor. Au fost corectate flexiunile stilurilor românești și termenii canonici de ranking. Pagina SSR a fost verificată separat: conține produse și nu mai afișează eroarea AI. Erorile viitoare sunt clasificate în loguri fără interogări ale clienților, credențiale sau răspunsuri brute ale providerului.
 
-## Email: așteaptă parola locală
+## Email: SMTP Gmail verificat, cerere Supabase Auth acceptată
 
-Setările Gmail neconfidențiale și providerul SMTP au fost salvate în `.env.local`, folosind căsuța instituțională indicată de titular. La ultima verificare lipsea `SMTP_PASS`. După salvarea parolei de aplicație local, se rulează `npm run email:verify`, apoi se configurează aceeași căsuță în Supabase Auth. Confirmarea emailului rămâne obligatorie. Nu s-au trimis emailuri reale pentru a simula succesul.
+Titularul a salvat parola de aplicație în `.env.local`. `npm run email:check` a confirmat configurația SMTP validă și existența outbox-ului; `npm run email:verify` a verificat conexiunea TLS și autentificarea Gmail fără să trimită mesaje. Aceasta nu dovedește livrarea în inbox sau accesul SMTP din infrastructura cloud.
+
+Setările SMTP, inclusiv parola, au fost sincronizate în variabilele Netlify exclusiv pentru producție, după aprobarea titularului. `SMTP_PASS` este marcat secret; nu a fost adăugat în previews sau Git. După înlocuirea parolei de către titular, autentificarea Gmail a fost verificată din nou, fără mesaje trimise, iar noua valoare a fost sincronizată în Netlify. Deploy-ul `6ae64859bb415b1b1c84e762` a ajuns `ready` și a fost publicat. Copia locală de mediu destinată producției rămâne ignorată de Git, cu permisiuni 0600.
+
+Titularul a confirmat salvarea configurației Gmail în Supabase Auth; captura arată hostul, portul și expeditorul corecte, cu parola mascată. O singură cerere reală de recuperare, către adresa instituțională a titularului și cu redirectul public `/cont/parola`, a fost acceptată de Supabase (HTTP 200, fără eroare). Nu s-au creat conturi, nu s-au schimbat parole și nu s-au citit linkuri sau tokenuri de autentificare.
+
+Răspunsul generic protejează existența conturilor: nu demonstrează că destinatarul are cont, că mesajul a fost expediat sau că a ajuns în inbox. Primirea și deschiderea linkului așteaptă confirmarea titularului. Confirmarea emailului nu a fost dezactivată. Înscrierea, recuperarea parolei și emailul unei comenzi plătite nu sunt încă verificate end-to-end.
 
 ## Stripe: acces TEST verificat, activare incompletă
 

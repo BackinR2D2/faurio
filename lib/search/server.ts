@@ -2,22 +2,48 @@ import "server-only";
 import { createHash } from "node:crypto";
 import type { SupabaseClient } from "@supabase/supabase-js";
 import { interpretNaturalQuery } from "@/lib/search-intent";
-import { aiIntentSchema, extractGroqIntent, mergeAiIntent, redactSearch, type ResolvedIntent, type SearchTaxonomy } from "./ai";
+import { aiIntentSchema, DEFAULT_SEARCH_MODEL, extractGroqIntent, mergeAiIntent, redactSearch, type ResolvedIntent, type SearchTaxonomy } from "./ai";
 import { searchFailureNotice, searchFailureReason } from "./status";
+import { inventoryFingerprint, summarizeInventory, type InventoryRow } from "./inventory";
 
 const inflight = new Map<string, Promise<ResolvedIntent>>();
+let inventoryCache: { expires: number; work: Promise<{ taxonomy: SearchTaxonomy; context: ReturnType<typeof summarizeInventory>; fingerprint: string }> } | undefined;
+
+async function readInventory(db: SupabaseClient) {
+  if (inventoryCache && inventoryCache.expires > Date.now()) return inventoryCache.work;
+  const work = (async () => {
+    const columns = "id,name,product_type,category,description,material,color,price,stock";
+    const first = await db.from("catalog_products").select(columns, { count: "exact" }).eq("active", true).order("id").range(0, 499).abortSignal(AbortSignal.timeout(8000));
+    if (first.error || first.count == null) throw new Error("AI_SEARCH_DATABASE_UNAVAILABLE");
+    const rows = [...(first.data || [])] as InventoryRow[];
+    for (let offset = 500; offset < first.count; offset += 2000) {
+      const pages = await Promise.all([0, 500, 1000, 1500].filter(delta => offset + delta < first.count!).map(delta => db.from("catalog_products").select(columns).eq("active", true).order("id").range(offset + delta, offset + delta + 499).abortSignal(AbortSignal.timeout(8000))));
+      for (const page of pages) {
+        if (page.error) throw new Error("AI_SEARCH_DATABASE_UNAVAILABLE");
+        rows.push(...(page.data || []) as InventoryRow[]);
+      }
+    }
+    const unique = (column: "product_type" | "category" | "material" | "color") => [...new Set(rows.map(row => row[column]))];
+    return { taxonomy: { productTypes: unique("product_type"), categories: unique("category"), materials: unique("material"), colors: unique("color") }, context: summarizeInventory(rows), fingerprint: inventoryFingerprint(rows) };
+  })();
+  inventoryCache = { expires: Date.now() + 30000, work };
+  try { return await work; } catch (error) { inventoryCache = undefined; throw error; }
+}
 
 export async function resolveSearch(query: string, db: SupabaseClient): Promise<ResolvedIntent> {
-  const fallback = { ...interpretNaturalQuery(query), engine: "rules" as const };
+  const parsed = interpretNaturalQuery(query);
+  const failure = (reason: string): ResolvedIntent => ({ ...parsed, unsupported: true, failure: reason, notice: [parsed.notice, searchFailureNotice(reason)].filter(Boolean).join(" ") });
   const key = process.env.GROQ_API_KEY;
-  if (!key || process.env.SEARCH_AI_ENABLED === "false" || (fallback.unsupported && fallback.notice?.includes("RON"))) return fallback;
-  const model = process.env.GROQ_MODEL || "openai/gpt-oss-20b";
-  const cacheKey = createHash("sha256").update(`faurio-search-v2:${model}:${redactSearch(query).trim().toLowerCase()}`).digest("hex");
+  if (!key || process.env.SEARCH_AI_ENABLED === "false") return failure("AI_CONFIGURATION_REQUIRED");
+  const model = process.env.GROQ_MODEL || DEFAULT_SEARCH_MODEL;
+  let inventory: Awaited<ReturnType<typeof readInventory>>;
+  try { inventory = await readInventory(db); }
+  catch (error) { return failure(searchFailureReason(error)); }
+  const cacheKey = createHash("sha256").update(`faurio-search-v4:${model}:${inventory.fingerprint}:${redactSearch(query).trim().toLowerCase()}`).digest("hex");
   if (inflight.has(cacheKey)) return inflight.get(cacheKey)!;
   const work = (async () => {
     try {
-      const { data: taxonomy, error: taxonomyError } = await db.rpc("catalog_search_taxonomy");
-      if (taxonomyError || !taxonomy) throw new Error(taxonomyError && !["PGRST202", "PGRST205", "42P01", "42883"].includes(taxonomyError.code) ? "AI_SEARCH_DATABASE_UNAVAILABLE" : "AI_SEARCH_MIGRATION_REQUIRED");
+      const { taxonomy } = inventory;
       const { data: cached } = await db.from("search_intent_cache").select("intent").eq("cache_key", cacheKey).gt("expires_at", new Date().toISOString()).maybeSingle();
       if (cached) return mergeAiIntent(query, aiIntentSchema.parse(cached.intent), taxonomy as SearchTaxonomy);
       const requestedLimit = Number(process.env.GROQ_DAILY_SEARCH_LIMIT || 200);
@@ -25,14 +51,14 @@ export async function resolveSearch(query: string, db: SupabaseClient): Promise<
       const { data: allowed, error: quotaError } = await db.rpc("claim_search_ai_slot", { p_limit: limit });
       if (quotaError) throw new Error(["PGRST202", "PGRST205", "42P01", "42883"].includes(quotaError.code) ? "AI_SEARCH_MIGRATION_REQUIRED" : "AI_SEARCH_DATABASE_UNAVAILABLE");
       if (!allowed) throw new Error("AI_SEARCH_BUDGET_EXHAUSTED");
-      const ai = await extractGroqIntent(query, taxonomy as SearchTaxonomy, key, model);
+      const ai = await extractGroqIntent(query, taxonomy, key, model, fetch, inventory.context);
       const intent = mergeAiIntent(query, ai, taxonomy as SearchTaxonomy);
       await db.from("search_intent_cache").upsert({ cache_key: cacheKey, intent: ai, expires_at: new Date(Date.now() + 60 * 60 * 1000).toISOString() });
       return intent;
     } catch (error) {
       const reason = searchFailureReason(error);
       console.warn("[search-ai]", reason);
-      return { ...fallback, notice: [fallback.notice, searchFailureNotice(reason)].filter(Boolean).join(" ") };
+      return failure(reason);
     }
   })();
   inflight.set(cacheKey, work);

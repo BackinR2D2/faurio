@@ -34,7 +34,7 @@ export const POST = api(async (request) => {
     const link = await stripe.accounts.createLoginLink(String(existing.stripe_account_id));
     return Response.json({ url: link.url });
   }
-  if (!body.acceptFeePolicy) throw new ApiError(400, "FEE_CONSENT_REQUIRED", "Acceptă comisionul de 5,5% înainte de configurare.");
+  if (!body.acceptFeePolicy) throw new ApiError(400, "FEE_CONSENT_REQUIRED", "Acceptă condițiile pentru creatori și plăți înainte de configurare.");
   const { error: consentError } = await db.from("seller_fee_acceptances").upsert({ shop_id: body.shopId, user_id: auth.user.id, version: FEE_POLICY_VERSION, accepted_at: new Date().toISOString() });
   databaseError(consentError);
   const accountId = existing?.stripe_account_id || (await stripe.accounts.create({ type: "express", country: shop.country, email: auth.user.email,

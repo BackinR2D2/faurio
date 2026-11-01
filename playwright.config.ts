@@ -10,7 +10,7 @@ export default defineConfig({
   timeout: 45000,
   expect: { timeout: 15000 },
   reporter: [["list"], ["html", { open: "never" }]],
-  use: { baseURL, trace: "retain-on-failure", screenshot: "only-on-failure" },
+  use: { baseURL, trace: "retain-on-failure", screenshot: "only-on-failure", launchOptions: process.env.CI ? { args: ["--enable-unsafe-swiftshader"] } : undefined },
   projects: [
     { name: "desktop-chrome", use: { ...devices["Desktop Chrome"], channel: "chrome", viewport: { width: 1440, height: 1000 } } },
     { name: "mobile-chrome", use: { ...devices["Desktop Chrome"], channel: "chrome", viewport: { width: 390, height: 844 }, isMobile: true, hasTouch: true, reducedMotion: "reduce" } },

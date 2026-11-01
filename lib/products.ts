@@ -5,6 +5,8 @@ import { getSupabaseAdmin } from "@/lib/supabase-server";
 import { publicProductSource } from "@/lib/marketplace/server";
 import { resolveSearch } from "@/lib/search/server";
 import type { ResolvedIntent } from "@/lib/search/ai";
+import { diversifyRecommendations } from "@/lib/search/inventory";
+import { searchFailureNotice } from "@/lib/search/status";
 
 type ProductRow = Record<string, unknown>;
 
@@ -40,39 +42,50 @@ export async function getCatalogProducts({ query = "", page = 1, pageSize = CATA
   const admin = getSupabaseAdmin();
   const safePageSize = Math.min(48, Math.max(1, Math.trunc(Number.isFinite(pageSize) ? pageSize : CATALOG_PAGE_SIZE)));
   const safePage = Math.min(10000, Math.max(1, Math.trunc(Number.isFinite(page) ? page : 1)));
-  const intent: ResolvedIntent | null = query.trim() ? admin ? await resolveSearch(query, admin) : interpretNaturalQuery(query) : null;
+  let intent: ResolvedIntent | null = query.trim() ? admin ? await resolveSearch(query, admin) : { ...interpretNaturalQuery(query), unsupported: true, failure: "AI_CONFIGURATION_REQUIRED", notice: searchFailureNotice("AI_CONFIGURATION_REQUIRED") } : null;
   if (!admin) return { products: [], total: 0, page: safePage, pageSize: safePageSize, pageCount: 0, configured: false, intent };
   if (intent?.unsupported) return { products: [], total: 0, page: 1, pageSize: safePageSize, pageCount: 0, configured: true, intent };
 
   const source = await publicProductSource();
   if (intent?.engine === "groq" && source === "catalog_products") {
-    const { data, error } = await admin.rpc("search_marketplace_catalog", { p_intent: intent, p_filters: filters, p_page: safePage, p_size: safePageSize });
-    if (error) throw new Error("Căutarea AI necesită finalizarea migrărilor bazei de date.");
-    const result = data as { products: ProductRow[]; total: number; page: number; pageSize: number };
-    return { ...result, products: result.products.map(mapProduct), pageCount: Math.ceil(result.total / result.pageSize), configured: true, intent };
+    try {
+      const discovery = intent.queryMode === "discovery" && (!filters.sort || filters.sort === "relevanta");
+      const size = discovery ? 48 : safePageSize;
+      const readPage = async (page: number) => {
+        const { data, error } = await admin.rpc("search_marketplace_catalog", { p_intent: intent, p_filters: filters, p_page: page, p_size: size });
+        if (error) throw new Error("AI_SEARCH_DATABASE_UNAVAILABLE");
+        return data as { products: ProductRow[]; total: number; page: number; pageSize: number };
+      };
+      const result = await readPage(discovery ? 1 : safePage);
+      if (!discovery) return { ...result, products: result.products.map(mapProduct), pageCount: Math.ceil(result.total / result.pageSize), configured: true, intent };
+      const matched = [...result.products];
+      const pages = Math.ceil(result.total / size);
+      for (let page = 2; page <= pages; page += 4) {
+        const batch = await Promise.all([0, 1, 2, 3].filter(delta => page + delta <= pages).map(delta => readPage(page + delta)));
+        for (const part of batch) matched.push(...part.products);
+      }
+      const products = diversifyRecommendations(matched.map(mapProduct), intent.productTypes);
+      const pageCount = Math.ceil(products.length / safePageSize);
+      const page = Math.max(1, Math.min(safePage, pageCount));
+      return { products: products.slice((page - 1) * safePageSize, page * safePageSize), total: products.length, page, pageSize: safePageSize, pageCount, configured: true, intent };
+    } catch {
+      intent = { ...intent, unsupported: true, failure: "AI_SEARCH_DATABASE_UNAVAILABLE", notice: searchFailureNotice("AI_SEARCH_DATABASE_UNAVAILABLE") };
+      return { products: [], total: 0, page: 1, pageSize: safePageSize, pageCount: 0, configured: true, intent };
+    }
   }
-  if (intent?.filters.personalizable && source === "products") return { products: [], total: 0, page: 1, pageSize: safePageSize, pageCount: 0, configured: true, intent };
+  if (intent) {
+    intent = { ...intent, unsupported: true, failure: "AI_SEARCH_MIGRATION_REQUIRED", notice: searchFailureNotice("AI_SEARCH_MIGRATION_REQUIRED") };
+    return { products: [], total: 0, page: 1, pageSize: safePageSize, pageCount: 0, configured: true, intent };
+  }
   let request = admin.from(source).select("*", { count: "exact" }).eq("active", true);
   if (filters.shopId) request = request.eq("shop_id", filters.shopId);
-  const category = filters.category && filters.category !== "Toate" ? filters.category : intent?.filters.category;
+  const category = filters.category && filters.category !== "Toate" ? filters.category : undefined;
   if (category) request = request.eq("category", category);
   if (filters.material && filters.material !== "Toate") request = request.ilike("material", `%${filters.material}%`);
-  const ceilings = [filters.maxPrice, intent?.filters.maxPrice].filter((value): value is number => value !== undefined && Number.isFinite(value));
-  if (ceilings.length) request = request.lte("price", Math.min(...ceilings));
-  if (intent?.filters.minPrice !== undefined) request = request.gte("price", intent.filters.minPrice);
+  if (filters.maxPrice !== undefined && Number.isFinite(filters.maxPrice)) request = request.lte("price", filters.maxPrice);
   if (filters.minRating && source === "products") return { products: [], total: 0, page: 1, pageSize: safePageSize, pageCount: 0, configured: true, intent };
   if (filters.minRating) request = request.eq("rating_source", "verified").gt("reviews", 0).gte("rating", filters.minRating);
-  if (filters.ready || intent?.filters.ready) request = request.lte("shipping_days", 2);
-  if (intent?.productTypes.length) request = request.in("product_type", intent.productTypes);
-  for (const material of intent?.filters.materials || []) request = material === "in" ? request.filter("material", "imatch", "\\min\\M") : request.ilike("material", `%${material}%`);
-  for (const material of intent?.filters.excludedMaterials || []) request = request.not("material", "ilike", `%${material}%`);
-  if (intent?.filters.personalizable) request = request.eq("personalizable", true);
-  if (intent?.filters.inStock) request = request.gt("stock", 0);
-  for (const color of intent?.filters.colors || []) request = request.ilike("color", `%${color}%`);
-  if (intent?.filters.occasion) request = request.contains("occasion", [intent.filters.occasion]);
-  if (intent?.filters.recipients.length) request = request.overlaps("recipients", intent.filters.recipients);
-  if (intent?.filters.mood) request = request.contains("moods", [intent.filters.mood]);
-  if (intent?.freeText) request = request.textSearch("search_vector", intent.freeText, { config: "simple", type: "plain" });
+  if (filters.ready) request = request.lte("shipping_days", 2);
 
   const sort = filters.sort || "relevanta";
   if (sort === "pret-mic") request = request.order("price", { ascending: true });
@@ -108,7 +121,7 @@ export async function getProductById(id: string) {
 
 export async function getProductsByIds(ids: string[]) {
   const admin = getSupabaseAdmin();
-  const unique = Array.from(new Set(ids)).filter(Boolean).slice(0, 50);
+  const unique = Array.from(new Set(ids)).filter(Boolean).slice(0, 130);
   if (!admin || !unique.length) return [];
   const { data, error } = await admin.from(await publicProductSource()).select("*").in("id", unique).eq("active", true);
   if (error) throw new Error(error.message);

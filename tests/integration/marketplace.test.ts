@@ -38,10 +38,38 @@ before(async () => {
   await db.exec("insert into public.products(id,name,category,price,stock,active) values ('legacy-vase','Legacy vase','Ceramică',100,5,true)");
   await db.exec(await readFile(new URL("../../supabase/migrations/202610300001_marketplace.sql", import.meta.url), "utf8"));
   await db.exec(await readFile(new URL("../../supabase/migrations/202610300002_product_media.sql", import.meta.url), "utf8"));
-  for (const migration of ["202610300003_order_emails.sql", "202610310001_ai_search.sql", "202610310002_connect_and_fees.sql", "202610310003_shop_media.sql", "202610310004_buyer_trust.sql"]) await db.exec(await readFile(new URL(`../../supabase/migrations/${migration}`, import.meta.url), "utf8"));
+  for (const migration of ["202610300003_order_emails.sql", "202610310001_ai_search.sql", "202610310002_connect_and_fees.sql", "202610310003_shop_media.sql", "202610310004_buyer_trust.sql", "202611010001_shop_lifecycle.sql"]) await db.exec(await readFile(new URL(`../../supabase/migrations/${migration}`, import.meta.url), "utf8"));
   await db.query("insert into auth.users(id,email) values($1,'a@example.test'),($2,'b@example.test'),($3,'operator@example.test')", [sellerA, sellerB, operator]);
 });
 after(async () => { await db.close(); });
+
+test("shop closure is owner-only, confirms the slug, archives public content and keeps history", async () => {
+  const owner = "10000000-0000-4000-8000-000000000009";
+  await db.query("insert into auth.users(id,email) values($1,'closing@example.test')", [owner]);
+  const id = await apply(owner, "Atelier de închis", "atelier-de-inchis");
+  await db.query("select public.moderate_marketplace($1,'shop',$2,'active','Application reviewed')", [operator, id]);
+  await asUser(owner, () => db.query("select public.publish_shop_page($1,1,true)", [id]));
+  const item = await asUser(owner, () => sqlValue<string>("select public.save_shop_product($1,null,$2,true) as value", [id, product("Piesă de închis")]));
+  await db.query("select public.moderate_marketplace($1,'product',$2,'published','Product reviewed')", [operator, item]);
+  await asUser(sellerB, () => assert.rejects(db.query("select public.close_owned_shop($1,'atelier-de-inchis')", [id]), /shop_owner_required/));
+  await asUser(owner, () => assert.rejects(db.query("select public.close_owned_shop($1,'greseala')", [id]), /shop_confirmation_mismatch/));
+  await db.query("insert into public.shop_payment_accounts(shop_id,stripe_account_id,charges_enabled,payouts_enabled,transfers_enabled) values($1,'acct_TestClosing',true,true,true)", [id]);
+  await db.query("select public.create_pending_order('TEST-CLOSE','Buyer','buyer@example.test','','Address',$1,120,0,19,139,'cs_test_close',null)", [[{ id: item, quantity: 1 }]]);
+  await db.query("select public.attach_order_finance('TEST-CLOSE',$1,'acct_TestClosing',12000,1900)", [id]);
+  await asUser(owner, () => assert.rejects(db.query("select public.close_owned_shop($1,'atelier-de-inchis')", [id]), /shop_open_orders/));
+  await db.exec("select public.cancel_pending_order('TEST-CLOSE')");
+  await asUser(owner, () => db.query("select public.close_owned_shop($1,'atelier-de-inchis')", [id]));
+  assert.equal(await sqlValue<string>("select status as value from public.shops where id=$1", [id]), "closed");
+  assert.equal(await sqlValue<number>("select count(*)::int as value from public.public_shops where id=$1", [id]), 0);
+  assert.equal(await sqlValue<number>("select count(*)::int as value from public.catalog_products where shop_id=$1", [id]), 0);
+  assert.equal(await sqlValue<number>("select count(*)::int as value from public.products where id=$1 and listing_status='archived'", [item]), 1);
+  assert.equal(await sqlValue<number>("select count(*)::int as value from public.shop_memberships where shop_id=$1", [id]), 1);
+  assert.equal(await sqlValue<number>("select count(*)::int as value from public.marketplace_audit_log where shop_id=$1 and action='shop.closed'", [id]), 1);
+  assert.equal(await sqlValue<number>("select count(*)::int as value from public.orders where code='TEST-CLOSE'"), 1);
+  await asUser(owner, () => db.query("select public.close_owned_shop($1,'atelier-de-inchis')", [id]));
+  assert.equal(await sqlValue<number>("select count(*)::int as value from public.marketplace_audit_log where shop_id=$1 and action='shop.closed'", [id]), 1);
+  await asUser(owner, () => assert.rejects(db.query("select public.save_shop_product($1,null,$2,false)", [id, product("Blocată")]), /shop_access_denied/));
+});
 
 test("legacy data is backfilled without changing ID, stock, or price", async () => {
   const row = await sqlValue<{ id: string; stock: number; price: number; checkout_eligible: boolean }>("select row_to_json(p) as value from public.catalog_products p where id='legacy-vase'");

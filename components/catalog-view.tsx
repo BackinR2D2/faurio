@@ -14,6 +14,8 @@ export function CatalogView({ products, total, page, pageCount, configured, inte
   const router = useRouter();
   const [pending, startTransition] = useTransition();
   const [mobileFilters, setMobileFilters] = useState(false);
+  const discovery = intent?.queryMode === "discovery";
+  const searchFailed = Boolean(intent?.failure);
   const priceLimit = intent?.filters.maxPrice ?? 400;
   const selectedPrice = Math.min(filters.maxPrice ?? priceLimit, priceLimit);
 
@@ -42,10 +44,10 @@ export function CatalogView({ products, total, page, pageCount, configured, inte
 
   return <main className={`page-main catalog-page${pending ? " is-loading" : ""}`}>
     <section className="catalog-head">
-      <div><p className="eyebrow">Catalog</p><h1>{intent ? "Potriviri precise" : "Obiecte cu rost"}</h1><p>{intent ? "Rezultate din catalog, fără completări aproximative." : "Serii mici, făcute local."}</p></div>
+      <div><p className="eyebrow">Catalog</p><h1>{discovery ? "Alese pentru povestea ta" : intent ? "Potriviri precise" : "Obiecte cu rost"}</h1><p>{discovery ? "Idei cu sens, din atelierele noastre." : intent ? "Produse care respectă cererea ta." : "Serii mici, făcute local."}</p></div>
       <form className="catalog-search" onSubmit={search}><Search /><input name="q" maxLength={1200} aria-label="Caută în catalog" defaultValue={initialQuery} placeholder="Ce cauți? Poți scrie o propoziție." /><button>Caută</button></form>
-      {intent && <div className="understanding"><Sparkles /><span><small>{intent.engine === "groq" ? "Interpretat cu AI · verificat în catalog" : "Filtre exacte"}</small><strong>{intent.summary.length ? intent.summary.join(" · ") : `căutare exactă: ${initialQuery}`}</strong></span><Link href="/catalog" aria-label="Șterge căutarea"><X /></Link></div>}
-      {intent?.notice && <p className="form-notice" role="status">{intent.notice}</p>}
+      {intent && !searchFailed && <div className="understanding"><Sparkles /><span><strong>{discovery ? intent.explanation || "Idei pentru povestea ta" : intent.summary.join(" · ") || initialQuery}</strong>{discovery && intent.summary.length > 0 && <span className="search-constraints">{intent.summary.join(" · ")}</span>}</span><Link href="/catalog" aria-label="Șterge căutarea"><X /></Link></div>}
+      {intent?.notice && !searchFailed && <p className="form-notice" role="status">{intent.notice}</p>}
     </section>
 
     <div className="category-row">{categories.map((item) => <button key={item} className={(filters.category || "Toate") === item ? "active" : ""} onClick={() => navigate({ categorie: item })}>{item}</button>)}<button className="mobile-filter" onClick={() => setMobileFilters(true)}><SlidersHorizontal /> Filtre</button></div>
@@ -60,7 +62,10 @@ export function CatalogView({ products, total, page, pageCount, configured, inte
       </aside>
       <div className="catalog-results">
         <div className="result-toolbar"><span>{total} {total === 1 ? "produs" : "produse"}</span><label>Ordonează <select value={filters.sort || "relevanta"} onChange={(event) => navigate({ sort: event.target.value })}><option value="relevanta">Relevanță</option><option value="pret-mic">Preț crescător</option><option value="pret-mare">Preț descrescător</option><option value="rating">Rating</option><option value="nou">Cele mai noi</option></select></label></div>
-        {!configured ? <div className="empty-state"><Search /><h2>Conectează baza de date</h2><p>Configurează variabilele Supabase și rulează schema plus seed-ul pentru a încărca cele 720 de produse.</p></div> : products.length ? <><div className="product-grid">{products.map((product, index) => <ProductCard key={product.id} product={product} reasons={intent?.summary.slice(0, 2)} priority={index < 3} />)}</div>{pageCount > 1 && <nav className="catalog-pagination" aria-label="Pagini catalog"><Link className={page <= 1 ? "disabled" : ""} href={href({ page: Math.max(1, page - 1) })} aria-label="Pagina anterioară"><ChevronLeft /></Link>{visiblePages.map((value, index) => <span key={value}>{index > 0 && value - visiblePages[index - 1] > 1 && <i>…</i>}<Link className={value === page ? "active" : ""} href={href({ page: value })}>{value}</Link></span>)}<Link className={page >= pageCount ? "disabled" : ""} href={href({ page: Math.min(pageCount, page + 1) })} aria-label="Pagina următoare"><ChevronRight /></Link></nav>}</> : <div className="empty-state"><Search /><h2>Nicio potrivire exactă</h2><p>Nu avem acum un produs care să respecte cererea. Reformulează căutarea sau elimină un filtru.</p><Link className="primary-button" href="/catalog">Vezi întregul catalog</Link></div>}
+        {searchFailed ? <div className="empty-state" role="alert"><Search /><h2>Nu am putut finaliza căutarea</h2><p>{intent?.notice}</p><button className="primary-button" disabled={pending} onClick={() => startTransition(() => router.refresh())}>{pending ? "Se reîncearcă…" : "Reîncearcă"}</button><Link className="reset-link" href="/catalog">Explorează catalogul</Link></div> : !configured ? <div className="empty-state"><Search /><h2>Conectează baza de date</h2><p>Configurează variabilele Supabase și rulează schema plus seed-ul pentru a încărca cele 720 de produse.</p></div> : products.length ? <><div className="product-grid">{products.map((product, index) => {
+          const reason = intent?.recommendations?.find(item => item.productType === product.productType)?.reason;
+          return <ProductCard key={product.id} product={product} reasons={reason ? [reason] : undefined} priority={index < 3} />;
+        })}</div>{pageCount > 1 && <nav className="catalog-pagination" aria-label="Pagini catalog"><Link className={page <= 1 ? "disabled" : ""} href={href({ page: Math.max(1, page - 1) })} aria-label="Pagina anterioară"><ChevronLeft /></Link>{visiblePages.map((value, index) => <span key={value}>{index > 0 && value - visiblePages[index - 1] > 1 && <i>…</i>}<Link className={value === page ? "active" : ""} href={href({ page: value })}>{value}</Link></span>)}<Link className={page >= pageCount ? "disabled" : ""} href={href({ page: Math.min(pageCount, page + 1) })} aria-label="Pagina următoare"><ChevronRight /></Link></nav>}</> : <div className="empty-state"><Search /><h2>{discovery ? "Nicio recomandare potrivită" : "Nicio potrivire exactă"}</h2><p>Nu avem acum un produs care să respecte cererea. Reformulează căutarea sau elimină un filtru.</p><Link className="primary-button" href="/catalog">Vezi întregul catalog</Link></div>}
       </div>
     </section>
   </main>;
