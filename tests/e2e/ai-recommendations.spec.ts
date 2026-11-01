@@ -28,7 +28,7 @@ test("LIVE AI gift story recommends grounded teaching and reading products withi
   await expect(page.locator(".product-card").first().locator(".match-reasons")).not.toBeEmpty();
   await expect(page.getByText(/AI nu este disponibil|filtrele exacte|Filtre exacte/)).toHaveCount(0);
   expect(await page.evaluate(() => document.documentElement.scrollWidth <= window.innerWidth)).toBeTruthy();
-  await page.screenshot({ path: `/private/tmp/faurio-teacher-gift-${info.project.name}.png`, fullPage: false });
+  await page.screenshot({ path: info.outputPath(`teacher-gift-${info.project.name}.png`), fullPage: false });
 });
 
 test("LIVE discovery pagination is stable and respects explicit price sorting", async ({ page }) => {

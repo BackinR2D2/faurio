@@ -9,6 +9,13 @@ import { ArrowRight, LoaderCircle, Search } from "lucide-react";
 const ArtisanOrbit = dynamic(() => import("@/components/artisan-orbit").then((module) => module.ArtisanOrbit), { ssr: false });
 const examples = ["Cadou cald pentru o prietenă, sub 150 lei", "Ceramică minimalistă pentru casă nouă", "Obiect botanic, livrat rapid"];
 
+function resizeSearchField(field: HTMLTextAreaElement) {
+  field.style.height = "0px";
+  const style = getComputedStyle(field);
+  const singleLine = parseFloat(style.lineHeight) + parseFloat(style.paddingTop) + parseFloat(style.paddingBottom);
+  field.style.height = `${Math.min(Math.max(field.scrollHeight, singleLine), 160)}px`;
+}
+
 export function HomeSearch() {
   const router = useRouter();
   const [pending, startTransition] = useTransition();
@@ -24,8 +31,7 @@ export function HomeSearch() {
   useEffect(() => {
     const field = searchField.current;
     if (!field) return;
-    field.style.height = "auto";
-    field.style.height = `${Math.min(field.scrollHeight, 160)}px`;
+    resizeSearchField(field);
   }, [query]);
   useEffect(() => {
     queueMicrotask(() => setInteractive(true));
@@ -53,7 +59,7 @@ export function HomeSearch() {
       <p className="home-lead">Descrie persoana, ocazia sau starea. Noi găsim piesele potrivite.</p>
       <form className="home-search-box" action="/catalog" method="get" onSubmit={search} aria-busy={pending}>
         <Search />
-        <textarea ref={searchField} name="q" rows={1} maxLength={1200} value={query} onChange={(event) => setQuery(event.target.value)} onKeyDown={(event) => { if (event.key === "Enter" && !event.shiftKey) { event.preventDefault(); search(); } }} placeholder="Un cadou delicat pentru sora mea, iubește plantele, buget 160 lei…" aria-label="Descrie în limbaj natural ce produs cauți" />
+        <textarea ref={searchField} name="q" rows={1} maxLength={1200} value={query} onChange={(event) => { setQuery(event.target.value); resizeSearchField(event.currentTarget); }} onKeyDown={(event) => { if (event.key === "Enter" && !event.shiftKey) { event.preventDefault(); search(); } }} placeholder="Un cadou delicat pentru sora mea, iubește plantele, buget 160 lei…" aria-label="Descrie în limbaj natural ce produs cauți" />
         <button aria-label="Găsește produsele potrivite" disabled={pending}>{pending ? <LoaderCircle className="search-spinner" /> : <ArrowRight />}</button>
       </form>
       <div className="home-examples">{examples.map((example) => <button className="home-example" key={example} onClick={() => { setQuery(example); search(undefined, example); }}>{example}</button>)}</div>

@@ -1,7 +1,7 @@
 import { expect, test } from "@playwright/test";
 
 for (const width of [390, 640, 1440]) {
-  test(`homepage title and search alignment at ${width}px`, async ({ page }) => {
+  test(`homepage title and search alignment at ${width}px`, async ({ page }, info) => {
     await page.setViewportSize({ width, height: 900 });
     await page.goto("/", { waitUntil: "domcontentloaded" });
     await page.evaluate(() => document.fonts.ready);
@@ -25,14 +25,17 @@ for (const width of [390, 640, 1440]) {
     expect(Math.abs(initial.center - initial.buttonCenter)).toBeLessThanOrEqual(1);
     if (initial.iconVisible) expect(Math.abs(initial.center - initial.iconCenter)).toBeLessThanOrEqual(1);
     expect(await page.evaluate(() => document.documentElement.scrollWidth <= window.innerWidth)).toBeTruthy();
-    await page.screenshot({ path: `/private/tmp/faurio-home-refined-${width}.png` });
+    await page.screenshot({ path: info.outputPath(`home-refined-${width}.png`) });
     const story = "Caut un cadou handmade pentru sora mea, care iubește plantele și ceramica. ".repeat(10);
     await field.fill(story);
     await expect(field).toHaveValue(story);
     await expect.poll(async () => (await field.boundingBox())!.height).toBeGreaterThan(initial.height);
     expect((await field.boundingBox())!.height).toBeLessThanOrEqual(160);
-    await field.fill("");
-    await expect.poll(async () => (await field.boundingBox())!.height).toBeLessThanOrEqual(initial.height + 1);
+    for (let repeat = 0; repeat < 3; repeat++) {
+      await field.fill("");
+      await expect.poll(async () => (await field.boundingBox())!.height).toBeLessThanOrEqual(initial.height + 1);
+      if (repeat < 2) await field.fill(story);
+    }
   });
 }
 
@@ -73,5 +76,5 @@ test("3D carousel loads four distinct objects one at a time with accessible cont
     return { separateControls: canvas.bottom <= controls.top + 1, separateCopy: viewport > 800 || title.bottom <= canvas.top, noOverflow: document.documentElement.scrollWidth <= viewport };
   });
   expect(layout).toEqual({ separateControls: true, separateCopy: true, noOverflow: true });
-  await page.screenshot({ path: `/private/tmp/faurio-carousel-${info.project.name}.png`, fullPage: true });
+  await page.screenshot({ path: info.outputPath(`carousel-${info.project.name}.png`), fullPage: true });
 });

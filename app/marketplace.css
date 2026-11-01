@@ -44,6 +44,7 @@ h1, h2, h3 { overflow-wrap: break-word; }
 .moderation-preview img { display: block; max-width: 100%; height: auto; border-radius: 12px; margin-top: 16px; object-fit: contain; }
 .moderation-preview p { white-space: pre-wrap; overflow-wrap: anywhere; }
 .home-art:has(.artisan-controls) .home-art-fallback { bottom: 90px; }
+.home-search-box textarea { min-height: 0; }
 @media (max-width: 850px) {
   .home-hero { align-content: start; gap: 24px; }
   .home-hero .home-art { position: relative; inset: auto; width: 100%; min-height: 340px; opacity: 1; }

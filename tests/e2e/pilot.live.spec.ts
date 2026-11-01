@@ -23,7 +23,7 @@ test("LIVE confirmed account signs in, reviews its QA listing and closes a dispo
   const ownShop = page.locator(".moderation-list article").filter({ has: page.getByRole("heading", { name: "Faurio · atelier QA TEST", exact: true }) });
   await ownShop.getByText("Detalii pentru verificare", { exact: true }).click();
   await expect(ownShop).toContainText("Atelier fictiv pentru verificarea pilotului public");
-  await page.screenshot({ path: `/private/tmp/faurio-live-review-${info.project.name}.png`, fullPage: false });
+  await page.screenshot({ path: info.outputPath(`live-review-${info.project.name}.png`), fullPage: false });
   const existing = (await (await page.request.get("/api/studio", { headers })).json()).shops.find((shop: { name: string; status: string }) => shop.name === "QA TEST · închidere" && shop.status !== "closed");
   const slug = existing?.slug || `qa-close-${crypto.randomUUID().slice(0, 18)}`;
   let shopId = existing?.id;
@@ -47,5 +47,5 @@ test("LIVE confirmed account signs in, reviews its QA listing and closes a dispo
   expect((await studio.json()).shops.find((shop: { id: string }) => shop.id === shopId).status).toBe("closed");
   expect((await page.request.get(`/makers/${slug}`)).status()).toBe(404);
   expect(await page.evaluate(() => document.documentElement.scrollWidth <= window.innerWidth)).toBeTruthy();
-  await page.screenshot({ path: `/private/tmp/faurio-live-closure-${info.project.name}.png`, fullPage: false });
+  await page.screenshot({ path: info.outputPath(`live-closure-${info.project.name}.png`), fullPage: false });
 });
