@@ -27,23 +27,12 @@ h1, h2, h3 { overflow-wrap: break-word; }
 .home-art-fallback { position: absolute; inset: 0; opacity: 1; transition: opacity .25s; }
 .home-art-fallback img { object-fit: contain; }
 .home-art-fallback.is-ready { opacity: 0; pointer-events: none; }
-.artisan-stage > .artisan-orbit { bottom: 90px; }
-.artisan-controls { position: absolute; inset: auto 0 0; z-index: 4; display: grid; gap: 12px; padding: 12px 4px 0; }
-.artisan-caption { display: flex; align-items: baseline; justify-content: space-between; gap: 12px; font-size: 12px; line-height: 1.5; }
-.artisan-caption > span { min-width: 0; overflow-wrap: anywhere; }
-.artisan-caption small { flex-shrink: 0; color: var(--ink-soft); font-variant-numeric: tabular-nums; }
-.artisan-actions { display: flex; align-items: center; justify-content: center; gap: 8px; }
-.artisan-actions > button { display: grid; width: 38px; height: 38px; place-items: center; border: 1px solid var(--line); border-radius: 50%; background: rgba(255,254,250,.65); cursor: pointer; }
-.artisan-actions button:disabled { opacity: .4; cursor: wait; }
-.artisan-dots { display: flex; align-items: center; gap: 2px; }
-.artisan-dots > button { display: grid; place-items: center; width: 28px; height: 38px; padding: 0; border: 0; background: transparent; cursor: pointer; }
-.artisan-dots > button::after { width: 6px; height: 6px; border-radius: 50%; background: #758b86; content: ""; }
-.artisan-dots > button[aria-current=true]::after { background: var(--ink); width: 9px; height: 9px; }
+.artisan-stage > .artisan-orbit { inset: 0; }
+.artisan-stage .sr-only { position: absolute; width: 1px; height: 1px; padding: 0; margin: -1px; overflow: hidden; clip-path: inset(50%); white-space: nowrap; border: 0; }
 .moderation-preview { margin-top: 16px; font-size: 14px; line-height: 1.6; }
 .moderation-preview summary { cursor: pointer; }
 .moderation-preview img { display: block; max-width: 100%; height: auto; border-radius: 12px; margin-top: 16px; object-fit: contain; }
 .moderation-preview p { white-space: pre-wrap; overflow-wrap: anywhere; }
-.home-art:has(.artisan-controls) .home-art-fallback { bottom: 90px; }
 .home-search-box textarea { min-height: 0; }
 @media (max-width: 850px) {
   .home-hero { align-content: start; gap: 24px; }

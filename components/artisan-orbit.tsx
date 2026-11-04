@@ -6,90 +6,45 @@ import * as THREE from "three";
 import { TrackballControls } from "three/examples/jsm/controls/TrackballControls.js";
 import { RoomEnvironment } from "three/examples/jsm/environments/RoomEnvironment.js";
 import { GLTFLoader } from "three/examples/jsm/loaders/GLTFLoader.js";
-import { ChevronLeft, ChevronRight, Pause, Play, RotateCcw } from "lucide-react";
+import { HERO_INTERVAL_MS, heroModels, shuffledHeroModels, type HeroModel } from "@/lib/hero-models";
 
-const models = [
-  {
-    name: "Vază ceramică antică cu model floral",
-    path: "/models/antique-ceramic-vase/antique_ceramic_vase_01_2k.gltf",
-    orientation: [-0.08, -0.35, 0.02],
-  },
-  {
-    name: "Elefant sculptat în lemn",
-    path: "/models/carved-wooden-elephant/carved_wooden_elephant_2k.gltf",
-    orientation: [-0.1, -0.55, 0.04],
-  },
-  {
-    name: "Perne decorative țesute",
-    path: "/models/throw-pillows/throw_pillows_01_2k.gltf",
-    orientation: [-0.18, -0.42, 0.06],
-  },
-  {
-    name: "Vază ceramică pictată",
-    path: "/models/ceramic-vase-02/ceramic_vase_02_2k.gltf",
-    orientation: [-0.08, -0.48, 0.02],
-  },
-  {
-    name: "Vază din alamă gravată",
-    path: "/models/brass-vase-03/brass_vase_03_2k.gltf",
-    orientation: [-0.06, -0.38, 0.02],
-  },
-  {
-    name: "Cupe ornamentale din alamă",
-    path: "/models/brass-goblets/brass_goblets_2k.gltf",
-    orientation: [-0.14, -0.5, 0.04],
-  },
-  {
-    name: "Serviciu de ceai floral",
-    path: "/models/tea-set/tea_set_01_2k.gltf",
-    orientation: [-0.2, -0.44, 0.04],
-  },
-] as const;
-
-function randomDeck() {
-  const shuffled = [...models];
-  for (let index = shuffled.length - 1; index > 0; index--) {
-    const random = Math.floor(Math.random() * (index + 1));
-    [shuffled[index], shuffled[random]] = [shuffled[random], shuffled[index]];
-  }
-  return shuffled.slice(0, 4);
+function disposeModel(root: THREE.Object3D) {
+  const geometries = new Set<THREE.BufferGeometry>();
+  const materials = new Set<THREE.Material>();
+  const textures = new Set<THREE.Texture>();
+  root.traverse((object) => {
+    if (!(object instanceof THREE.Mesh)) return;
+    geometries.add(object.geometry);
+    (Array.isArray(object.material) ? object.material : [object.material]).forEach((material) => {
+      materials.add(material);
+      Object.values(material).forEach((value) => { if (value instanceof THREE.Texture) textures.add(value); });
+    });
+  });
+  textures.forEach((texture) => { if (typeof ImageBitmap !== "undefined" && texture.source.data instanceof ImageBitmap) texture.source.data.close(); texture.dispose(); });
+  materials.forEach((material) => material.dispose());
+  geometries.forEach((geometry) => geometry.dispose());
 }
 
-export function ArtisanOrbit({ onReady, onUnavailable, onLoading }: { onReady?: () => void; onUnavailable?: () => void; onLoading?: () => void }) {
+export function ArtisanOrbit({ onReady, onUnavailable }: { onReady?: () => void; onUnavailable?: () => void }) {
   const hostRef = useRef<HTMLDivElement>(null);
-  const [deck, setDeck] = useState<(typeof models)[number][]>([]);
-  const [index, setIndex] = useState(0);
   const [busy, setBusy] = useState(true);
-  const [paused, setPaused] = useState(false);
-  const pausedRef = useRef(false);
-  const resetRef = useRef<() => void>(() => {});
-  const model = deck[index];
-
-  useEffect(() => { queueMicrotask(() => { setDeck(randomDeck()); const reduce = matchMedia("(prefers-reduced-motion: reduce)").matches; setPaused(reduce); pausedRef.current = reduce; }); }, []);
-  const select = (next: number) => {
-    if (busy || next === index) return;
-    setBusy(true);
-    onLoading?.();
-    setIndex((next + deck.length) % deck.length);
-  };
 
   useEffect(() => {
     const host = hostRef.current;
-    if (!host || !model) return;
+    if (!host) return;
     host.removeAttribute("data-loaded");
 
     const scene = new THREE.Scene();
     const camera = new THREE.PerspectiveCamera(32, 1, 0.1, 40);
     camera.position.set(0, 0.15, 6.6);
     camera.lookAt(0, 0, 0);
-
     let renderer: THREE.WebGLRenderer;
     try { renderer = new THREE.WebGLRenderer({ alpha: true, antialias: true, powerPreference: "default" }); }
     catch { host.setAttribute("aria-label", "Previzualizare 3D indisponibilă pe acest dispozitiv"); queueMicrotask(() => setBusy(false)); onUnavailable?.(); return; }
     renderer.setPixelRatio(Math.min(window.devicePixelRatio, 1.5));
     renderer.outputColorSpace = THREE.SRGBColorSpace;
     renderer.toneMapping = THREE.ACESFilmicToneMapping;
-    renderer.toneMappingExposure = 1.15;
+    renderer.toneMappingExposure = 0.9;
     host.appendChild(renderer.domElement);
 
     const controls = new TrackballControls(camera, renderer.domElement);
@@ -97,102 +52,132 @@ export function ArtisanOrbit({ onReady, onUnavailable, onLoading }: { onReady?: 
     controls.zoomSpeed = 0.55;
     controls.panSpeed = 0.22;
     controls.dynamicDampingFactor = 0.12;
-    controls.minDistance = 6;
-    controls.maxDistance = 8.6;
     controls.target.set(0, 0, 0);
     let interacting = false;
-    controls.addEventListener("start", () => { interacting = true; });
-    controls.addEventListener("end", () => { interacting = false; });
+    let focused = false;
+    let hovered = false;
+    let manuallyPaused = false;
+    let visible = false;
+    let active = true;
+    const preference = matchMedia("(prefers-reduced-motion: reduce)");
+    let reducedMotion = preference.matches;
+    const paused = () => reducedMotion || manuallyPaused || interacting || focused || hovered || !visible || document.hidden;
+    const updatePlayback = () => { host.dataset.playback = paused() ? "paused" : "playing"; };
+    controls.addEventListener("start", () => { interacting = true; updatePlayback(); });
+    controls.addEventListener("end", () => { interacting = false; updatePlayback(); });
 
     const environmentGenerator = new THREE.PMREMGenerator(renderer);
     const room = new RoomEnvironment();
     const environment = environmentGenerator.fromScene(room, 0.04);
     room.dispose();
     scene.environment = environment.texture;
-
     const stage = new THREE.Group();
-    const objectRoot = new THREE.Group();
-    stage.add(objectRoot);
     scene.add(stage);
-
-    const key = new THREE.DirectionalLight(0xfff4d2, 3.8);
+    const key = new THREE.DirectionalLight(0xfff4e4, 2.4);
     key.position.set(4.5, 6, 5);
     scene.add(key);
-    const fill = new THREE.DirectionalLight(0x9dbbae, 2.4);
+    const fill = new THREE.DirectionalLight(0xd7e9e4, 1.3);
     fill.position.set(-4, 1.5, 4);
     scene.add(fill);
-    const rim = new THREE.PointLight(0x188fa7, 5, 12);
+    const rim = new THREE.PointLight(0x188fa7, 3, 12);
     rim.position.set(-3, 3.5, -2);
     scene.add(rim);
 
-    let active = true;
-    const timeout = setTimeout(() => {
-      if (!active || host.dataset.loaded === "true") return;
-      active = false;
-      setBusy(false);
-      onUnavailable?.();
-    }, 20000);
-    let visible = true;
-    const reducedMotion = matchMedia("(prefers-reduced-motion: reduce)").matches;
-    const disposeModel = (root: THREE.Object3D) => {
-      root.traverse((object) => {
-        if (!(object instanceof THREE.Mesh)) return;
-        object.geometry.dispose();
-        const materials = Array.isArray(object.material) ? object.material : [object.material];
-        materials.forEach((material) => {
-          Object.values(material).forEach((value) => { if (value instanceof THREE.Texture) value.dispose(); });
-          material.dispose();
-        });
-      });
-    };
+    type Prepared = { root: THREE.Group; model: HeroModel };
+    let current: Prepared | undefined;
+    let upcoming: Prepared | undefined;
+    let deck = shuffledHeroModels();
+    let rotation = 0;
+    let movement = 0;
+    let elapsed = 0;
+    let lastFrame = performance.now();
+    let waitingForFirstFrame = false;
+    let preparing = false;
+    let transitioning = false;
+    const roots = new Set<THREE.Group>();
+    const failed = new Set<string>();
+    const pendingLoads = new Set<{ abort: () => void }>();
     const loader = new GLTFLoader();
-    loader.load(
-      model.path,
-      (gltf) => {
-        if (!active) { disposeModel(gltf.scene); return; }
+    const load = (model: HeroModel) => new Promise<Prepared>((resolve, reject) => {
+      let settled = false;
+      const request = { abort: () => finish(new Error("Model loading cancelled")) };
+      const finish = (error?: Error, value?: Prepared) => {
+        if (settled) return;
+        settled = true;
+        clearTimeout(timeout);
+        pendingLoads.delete(request);
+        if (error) reject(error); else resolve(value!);
+      };
+      const timeout = setTimeout(() => finish(new Error("Model loading timed out")), 20000);
+      pendingLoads.add(request);
+      loader.load(model.path, (gltf) => {
+        if (!active || settled) { disposeModel(gltf.scene); return; }
         const loadedScene = gltf.scene;
-        const bounds = new THREE.Box3().setFromObject(loadedScene);
-        const sphere = bounds.getBoundingSphere(new THREE.Sphere());
+        const sphere = new THREE.Box3().setFromObject(loadedScene).getBoundingSphere(new THREE.Sphere());
         const scale = 1.25 / Math.max(sphere.radius, 0.001);
         loadedScene.scale.setScalar(scale);
         loadedScene.position.copy(sphere.center).multiplyScalar(-scale);
         loadedScene.traverse((object) => {
           if (!(object instanceof THREE.Mesh)) return;
-          object.castShadow = true;
-          object.receiveShadow = true;
-          const materials = Array.isArray(object.material)
-            ? object.material
-            : [object.material];
-          materials.forEach((material) => {
-            if (material instanceof THREE.MeshStandardMaterial)
-              material.envMapIntensity = 1.1;
-          });
+          const materials = Array.isArray(object.material) ? object.material : [object.material];
+          materials.forEach((material) => { if (material instanceof THREE.MeshStandardMaterial) material.envMapIntensity = 0.8; });
         });
-        objectRoot.rotation.set(
-          model.orientation[0],
-          model.orientation[1],
-          model.orientation[2]
-        );
-        objectRoot.add(loadedScene);
-        clearTimeout(timeout);
-        host.setAttribute("data-loaded", "true");
-        setBusy(false);
-        onReady?.();
-        if (!reducedMotion) gsap.fromTo(
-          objectRoot.scale,
-          { x: 0.88, y: 0.88, z: 0.88 },
-          { x: 1, y: 1, z: 1, duration: 1.4, ease: "power3.out" }
-        );
-      },
-      undefined,
-      () => {
-        if (!active) return;
-        clearTimeout(timeout);
-        host.setAttribute("aria-label", "Modelul 3D nu a putut fi încărcat");
-        setBusy(false);
-        onUnavailable?.();
+        const root = new THREE.Group();
+        root.rotation.set(model.orientation[0], model.orientation[1], model.orientation[2]);
+        root.add(loadedScene);
+        roots.add(root);
+        finish(undefined, { root, model });
+      }, undefined, () => finish(new Error("Model unavailable")));
+    });
+    const release = (item: Prepared) => {
+      gsap.killTweensOf(item.root.scale);
+      stage.remove(item.root);
+      roots.delete(item.root);
+      disposeModel(item.root);
+    };
+    const nextModel = () => {
+      if (!deck.length) deck = shuffledHeroModels(current?.model.path);
+      return deck.shift()!;
+    };
+    const prepareNext = async () => {
+      if (preparing || upcoming || !active || failed.size >= heroModels.length) return;
+      preparing = true;
+      for (let attempt = 0; attempt < heroModels.length && active; attempt++) {
+        const model = nextModel();
+        if (failed.has(model.path)) continue;
+        try {
+          const item = await load(model);
+          if (!active) { release(item); break; }
+          upcoming = item;
+          renderer.compile(item.root, camera, scene);
+          break;
+        } catch { if (active) failed.add(model.path); }
       }
-    );
+      preparing = false;
+    };
+    const showNext = () => {
+      if (!upcoming || transitioning || !active) return;
+      const previous = current;
+      current = upcoming;
+      upcoming = undefined;
+      transitioning = true;
+      rotation = 0;
+      elapsed = 0;
+      waitingForFirstFrame = true;
+      controls.reset();
+      resize();
+      stage.add(current.root);
+      host.dataset.model = current.model.path;
+      host.setAttribute("aria-label", `Model 3D: ${current.model.name}`);
+      host.dataset.loaded = "true";
+      lastFrame = performance.now();
+      setBusy(false);
+      onReady?.();
+      const complete = () => { if (previous) release(previous); transitioning = false; if (!reducedMotion) void prepareNext(); };
+      if (reducedMotion) { complete(); return; }
+      if (previous) gsap.to(previous.root.scale, { x: 0, y: 0, z: 0, duration: 0.25, ease: "power2.in" });
+      gsap.fromTo(current.root.scale, { x: 0.01, y: 0.01, z: 0.01 }, { x: 1, y: 1, z: 1, duration: 0.65, ease: "power3.out", onComplete: complete });
+    };
 
     const resize = () => {
       const { width, height } = host.getBoundingClientRect();
@@ -210,78 +195,91 @@ export function ArtisanOrbit({ onReady, onUnavailable, onLoading }: { onReady?: 
     const observer = new ResizeObserver(resize);
     observer.observe(host);
     resize();
-    resetRef.current = () => { controls.reset(); resize(); };
     const keyboard = (event: KeyboardEvent) => {
-      const amount = 0.15;
+      if ([" ", "Escape"].includes(event.key)) {
+        event.preventDefault();
+        manuallyPaused = event.key === "Escape" || !manuallyPaused;
+        updatePlayback();
+      }
       if (["ArrowLeft", "ArrowRight", "ArrowUp", "ArrowDown"].includes(event.key)) {
         event.preventDefault();
-        const axis = new THREE.Vector3(event.key.includes("Left") || event.key.includes("Right") ? 0 : 1, event.key.includes("Left") || event.key.includes("Right") ? 1 : 0, 0);
+        const horizontal = event.key === "ArrowLeft" || event.key === "ArrowRight";
+        const axis = new THREE.Vector3(horizontal ? 0 : 1, horizontal ? 1 : 0, 0);
         const direction = event.key === "ArrowLeft" || event.key === "ArrowUp" ? -1 : 1;
-        camera.position.sub(controls.target).applyAxisAngle(axis, amount * direction).add(controls.target);
+        camera.position.sub(controls.target).applyAxisAngle(axis, 0.15 * direction).add(controls.target);
         camera.lookAt(controls.target);
       }
-      if (event.key === "Home") { event.preventDefault(); resetRef.current(); }
+      if (event.key === "Home") { event.preventDefault(); controls.reset(); resize(); }
     };
+    const focus = () => { focused = true; updatePlayback(); };
+    const blur = () => { focused = false; updatePlayback(); };
+    const enter = (event: PointerEvent) => { if (event.pointerType === "mouse") { hovered = true; updatePlayback(); } };
+    const leave = () => { hovered = false; updatePlayback(); };
+    const motion = () => { reducedMotion = preference.matches; updatePlayback(); if (!reducedMotion) void prepareNext(); };
     host.addEventListener("keydown", keyboard);
-
-    const visibility = new IntersectionObserver(([entry]) => { visible = entry.isIntersecting; });
+    host.addEventListener("focus", focus);
+    host.addEventListener("blur", blur);
+    host.addEventListener("pointerenter", enter);
+    host.addEventListener("pointerleave", leave);
+    preference.addEventListener("change", motion);
+    document.addEventListener("visibilitychange", updatePlayback);
+    const visibility = new IntersectionObserver(([entry]) => { visible = entry.isIntersecting; updatePlayback(); });
     visibility.observe(host);
-    let rotation = 0;
-    let movement = 0;
+    updatePlayback();
+    void prepareNext().then(() => {
+      if (!active) return;
+      if (upcoming) showNext();
+      else { setBusy(false); onUnavailable?.(); }
+    });
+
     let animationFrame = 0;
-    let lastFrame = 0;
-    const render = (now: number) => {
+    const render = () => {
       animationFrame = requestAnimationFrame(render);
-      if (document.hidden || !visible || now - lastFrame < 32) return;
-      const delta = Math.min((now - lastFrame) / 1000, 0.05);
+      const now = performance.now();
+      if (now - lastFrame < 32) return;
+      const frameTime = now - lastFrame;
+      const delta = Math.min(frameTime / 1000, 0.05);
       lastFrame = now;
-      if (!pausedRef.current && !interacting) { rotation += delta * 0.018; movement += delta * 0.16; }
-      objectRoot.rotation.set(
-        model.orientation[0] + rotation,
-        model.orientation[1] + rotation,
-        model.orientation[2] + rotation
-      );
-      stage.position.set(
-        Math.sin(movement) * 0.035,
-        Math.sin(movement + (Math.PI * 2) / 3) * 0.035,
-        Math.sin(movement + (Math.PI * 4) / 3) * 0.035
-      );
+      if (document.hidden || !visible) return;
+      if (!paused()) {
+        rotation += delta * 0.018;
+        movement += delta * 0.16;
+        elapsed += frameTime;
+        if (elapsed >= HERO_INTERVAL_MS && !transitioning) showNext();
+      }
+      if (current) current.root.rotation.set(current.model.orientation[0] + rotation, current.model.orientation[1] + rotation, current.model.orientation[2] + rotation);
+      stage.position.set(Math.sin(movement) * 0.035, Math.sin(movement + (Math.PI * 2) / 3) * 0.035, Math.sin(movement + (Math.PI * 4) / 3) * 0.035);
       controls.update();
       controls.target.clampLength(0, 0.18);
       renderer.render(scene, camera);
+      if (waitingForFirstFrame) { elapsed = 0; lastFrame = performance.now(); waitingForFirstFrame = false; }
     };
     animationFrame = requestAnimationFrame(render);
 
     return () => {
       active = false;
-      clearTimeout(timeout);
+      pendingLoads.forEach((request) => request.abort());
       cancelAnimationFrame(animationFrame);
       observer.disconnect();
       visibility.disconnect();
       controls.dispose();
       host.removeEventListener("keydown", keyboard);
-      gsap.killTweensOf(objectRoot.scale);
-      disposeModel(scene);
+      host.removeEventListener("focus", focus);
+      host.removeEventListener("blur", blur);
+      host.removeEventListener("pointerenter", enter);
+      host.removeEventListener("pointerleave", leave);
+      preference.removeEventListener("change", motion);
+      document.removeEventListener("visibilitychange", updatePlayback);
+      roots.forEach((root) => { gsap.killTweensOf(root.scale); disposeModel(root); });
       environment.texture.dispose();
       environmentGenerator.dispose();
       renderer.dispose();
       renderer.domElement.remove();
     };
-  }, [model, onReady, onUnavailable]);
+  }, [onReady, onUnavailable]);
 
-  return (
-    <div className="artisan-stage" role="region" aria-label="Colecție de obiecte 3D" aria-roledescription="carusel" aria-busy={busy}>
-      <div
-        ref={hostRef}
-        className="artisan-orbit"
-        aria-label={model ? `Model 3D: ${model.name}` : "Se încarcă modelul 3D"}
-        role="img"
-        tabIndex={0}
-      />
-      {deck.length > 0 && <div className="artisan-controls">
-        <div className="artisan-caption" aria-live="polite"><span>{busy ? "Se încarcă obiectul…" : model.name}</span><small>{index + 1} / {deck.length}</small></div>
-        <div className="artisan-actions"><button type="button" disabled={busy} onClick={() => select(index - 1)} aria-label="Obiectul anterior"><ChevronLeft size={18} /></button><div className="artisan-dots">{deck.map((item, position) => <button type="button" key={item.path} disabled={busy} aria-label={`Arată ${item.name}`} aria-current={position === index ? "true" : undefined} onClick={() => select(position)} />)}</div><button type="button" disabled={busy} onClick={() => select(index + 1)} aria-label="Obiectul următor"><ChevronRight size={18} /></button><button type="button" onClick={() => resetRef.current()} disabled={busy} aria-label="Resetează poziția"><RotateCcw size={16} /></button><button type="button" onClick={() => { pausedRef.current = !pausedRef.current; setPaused(pausedRef.current); }} aria-label={paused ? "Pornește mișcarea" : "Oprește mișcarea"}>{paused ? <Play size={16} /> : <Pause size={16} />}</button></div>
-      </div>}
-    </div>
-  );
+  return <div className="artisan-stage" role="region" aria-label="Colecție de obiecte 3D" aria-busy={busy}>
+    <div ref={hostRef} className="artisan-orbit" aria-label="Se încarcă modelul 3D" role="img" tabIndex={0} aria-describedby="artisan-help" aria-keyshortcuts="ArrowLeft ArrowRight ArrowUp ArrowDown Home Space Escape" />
+    <span id="artisan-help" className="sr-only">Trage pentru a roti obiectul. Schimbarea automată se oprește când interacționezi sau focalizezi scena. Săgețile rotesc obiectul, Home resetează poziția, Space comută pauza și Escape oprește animația.</span>
+  </div>;
 }

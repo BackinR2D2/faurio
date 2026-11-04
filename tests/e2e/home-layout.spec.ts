@@ -39,42 +39,67 @@ for (const width of [390, 640, 1440]) {
   });
 }
 
-test("3D carousel loads four distinct objects one at a time with accessible controls", async ({ page }, info) => {
-  test.setTimeout(120000);
+test("3D scene changes detailed objects automatically without carousel controls", async ({ page }, info) => {
+  test.setTimeout(90000);
+  await page.emulateMedia({ reducedMotion: "no-preference" });
+  const errors: string[] = [];
+  page.on("pageerror", error => errors.push(error.message));
+  await page.addInitScript(() => {
+    const changes: { path: string; time: number }[] = [];
+    Object.assign(window, { sceneChanges: changes });
+    new MutationObserver(records => {
+      for (const record of records) {
+        if (record.attributeName !== "data-model") continue;
+        const path = (record.target as HTMLElement).dataset.model!;
+        changes.push({ path, time: performance.now() });
+      }
+    }).observe(document, { subtree: true, attributes: true, attributeFilter: ["data-model"] });
+  });
   await page.goto("/", { waitUntil: "domcontentloaded" });
   const explore = page.getByRole("button", { name: "Explorează obiectul în 3D" });
   if ((page.viewportSize()?.width || 0) <= 800) await explore.click();
   const carousel = page.getByRole("region", { name: "Colecție de obiecte 3D" });
   await expect(carousel).toBeVisible();
-  const dots = carousel.locator(".artisan-dots button");
-  await expect(dots).toHaveCount(4);
-  const names = await dots.evaluateAll(elements => elements.map(element => element.getAttribute("aria-label")));
-  expect(new Set(names).size).toBe(4);
-  for (let index = 0; index < 4; index++) {
-    if (index) await carousel.getByRole("button", { name: "Obiectul următor", exact: true }).click();
-    await expect(carousel).toHaveAttribute("aria-busy", "false", { timeout: 25000 });
-    await expect(carousel.locator(".artisan-orbit")).toHaveAttribute("data-loaded", "true");
-    await expect(carousel.locator("canvas")).toHaveCount(1);
-    await expect(dots.nth(index)).toHaveAttribute("aria-current", "true");
-    await expect(carousel.locator(".artisan-caption small")).toHaveText(`${index + 1} / 4`);
-  }
-  const stop = carousel.getByRole("button", { name: "Oprește mișcarea" });
-  if (await stop.isVisible()) await stop.click();
-  await expect(carousel.getByRole("button", { name: "Pornește mișcarea" })).toBeVisible();
-  await carousel.getByRole("button", { name: "Resetează poziția" }).click();
   const model = carousel.locator(".artisan-orbit");
+  await model.scrollIntoViewIfNeeded();
+  await page.mouse.move(0, 0);
+  await expect(carousel).toHaveAttribute("aria-busy", "false", { timeout: 25000 });
+  await expect(model).toHaveAttribute("data-loaded", "true");
+  await expect(carousel.getByRole("button")).toHaveCount(0);
+  await expect(carousel.locator(".artisan-controls, .artisan-caption, .artisan-dots")).toHaveCount(0);
+  await expect(carousel.locator("canvas")).toHaveCount(1);
+  const canvas = carousel.locator("canvas");
+  const canvasHandle = await canvas.elementHandle();
+  await expect.poll(() => page.evaluate(() => (window as unknown as { sceneChanges: unknown[] }).sceneChanges.length), { timeout: 60000 }).toBeGreaterThanOrEqual(5);
+  const changes = await page.evaluate(() => (window as unknown as { sceneChanges: { path: string; time: number }[] }).sceneChanges.slice(0, 5));
+  expect(new Set(changes.map(item => item.path)).size).toBe(5);
+  expect(changes.some(item => /ceramic-vase-02|tea-set/.test(item.path))).toBeFalsy();
+  for (let index = 1; index < changes.length; index++) expect(changes[index].time - changes[index - 1].time).toBeGreaterThanOrEqual(2900);
+  await expect(carousel.locator("canvas")).toHaveCount(1);
   await model.focus();
+  await expect(model).toHaveAttribute("data-playback", "paused");
+  const pausedModel = await model.getAttribute("data-model");
+  await page.waitForTimeout(3300);
+  await expect(model).toHaveAttribute("data-model", pausedModel!);
   await model.press("ArrowRight");
   await model.press("ArrowUp");
   await model.press("Home");
   await expect(model).toBeFocused();
   const layout = await carousel.evaluate(element => {
     const canvas = element.querySelector("canvas")!.getBoundingClientRect();
-    const controls = element.querySelector(".artisan-controls")!.getBoundingClientRect();
     const title = document.querySelector(".home-title")!.getBoundingClientRect();
     const viewport = window.innerWidth;
-    return { separateControls: canvas.bottom <= controls.top + 1, separateCopy: viewport > 800 || title.bottom <= canvas.top, noOverflow: document.documentElement.scrollWidth <= viewport };
+    return { separateCopy: viewport > 800 || title.bottom <= canvas.top, noOverflow: document.documentElement.scrollWidth <= viewport };
   });
-  expect(layout).toEqual({ separateControls: true, separateCopy: true, noOverflow: true });
+  expect(layout).toEqual({ separateCopy: true, noOverflow: true });
+  await page.emulateMedia({ reducedMotion: "reduce" });
+  await page.getByRole("heading", { level: 1 }).click();
+  await page.mouse.move(0, 0);
+  await expect(model).toHaveAttribute("data-playback", "paused");
+  const reducedModel = await model.getAttribute("data-model");
+  await page.waitForTimeout(3300);
+  await expect(model).toHaveAttribute("data-model", reducedModel!);
+  expect(await canvas.evaluate((element, original) => element === original, canvasHandle)).toBeTruthy();
+  expect(errors).toEqual([]);
   await page.screenshot({ path: info.outputPath(`carousel-${info.project.name}.png`), fullPage: true });
 });

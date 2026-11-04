@@ -27,7 +27,6 @@ export function HomeSearch() {
   const [interactive, setInteractive] = useState(false);
   const onSceneReady = useCallback(() => setSceneReady(true), []);
   const onSceneUnavailable = useCallback(() => setSceneFailed(true), []);
-  const onSceneLoading = useCallback(() => { setSceneReady(false); setSceneFailed(false); }, []);
   useEffect(() => {
     const field = searchField.current;
     if (!field) return;
@@ -68,7 +67,7 @@ export function HomeSearch() {
     <div className="home-art">
       <div className="art-halo" />
       <div className={`home-art-fallback${sceneReady ? " is-ready" : ""}`} aria-hidden={sceneReady}><Image src="/models/hero-fallback.png" alt="Vază ceramică pictată — previzualizare a unei piese de atelier" fill sizes="(max-width: 800px) 360px, 50vw" priority fetchPriority="high" /></div>
-      {loadScene && <ArtisanOrbit onReady={onSceneReady} onUnavailable={onSceneUnavailable} onLoading={onSceneLoading} />}
+      {loadScene && <ArtisanOrbit onReady={onSceneReady} onUnavailable={onSceneUnavailable} />}
     </div>
   </section></main>;
 }

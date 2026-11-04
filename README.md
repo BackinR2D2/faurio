@@ -22,7 +22,7 @@ Termenii necunoscuți rămân obligatorii chiar când cererea conține buget sau
 - `/makers` și `/makers/[slug]` — doar ateliere active și versiuni publicate;
 - `/admin/marketplace` — aprobări, retragerea listărilor, suspendări și audit;
 - RLS și funcții SQL testate cu două identități; view-uri publice fără ciorne;
-- carusel cu patru modele 3D aleatorii, încărcate pe rând, rotație/reset/pauză, fallback static și activare la cerere pe mobil;
+- scenă 3D fără meniu, cu cinci obiecte detaliate alternate aleatoriu la 3 secunde, preîncărcarea următorului obiect, rotație interactivă, fallback static și activare la cerere pe mobil;
 - parser cu intervale de preț, excluderi de materiale, personalizare ca filtru strict și explicații pentru monede/deadline-uri neconfirmate.
 
 **Stare verificată:** cele opt migrări sunt aplicate în Supabase, iar căutarea Groq a fost verificată pe catalogul real. Contul confirmat, profilul/coșul/favoritele, uploadul, moderarea, publicarea și închiderea unui atelier QA au fost verificate pe backendul găzduit. [ACTIVATION-STATUS.md](docs/ACTIVATION-STATUS.md) distinge verificările reale de testele simulate și de pașii financiari încă nefinalizați. Nu rerula migrările, schema de bază sau seed-ul peste datele existente. [Ghid de lansare](docs/PRODUCTION-LAUNCH.md).
