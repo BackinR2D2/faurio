@@ -7,6 +7,7 @@ import { searchFailureNotice, searchFailureReason } from "./status";
 import { inventoryFingerprint, summarizeInventory, type InventoryRow } from "./inventory";
 
 const inflight = new Map<string, Promise<ResolvedIntent>>();
+const recentIntents = new Map<string, { expires: number; intent: ResolvedIntent }>();
 let inventoryCache: { expires: number; work: Promise<{ taxonomy: SearchTaxonomy; context: ReturnType<typeof summarizeInventory>; fingerprint: string }> } | undefined;
 
 async function readInventory(db: SupabaseClient) {
@@ -36,11 +37,16 @@ export async function resolveSearch(query: string, db: SupabaseClient): Promise<
   const key = process.env.GROQ_API_KEY;
   if (!key || process.env.SEARCH_AI_ENABLED === "false") return failure("AI_CONFIGURATION_REQUIRED");
   const model = process.env.GROQ_MODEL || DEFAULT_SEARCH_MODEL;
+  const recentKey = createHash("sha256").update(`${model}:${query.trim().toLowerCase()}`).digest("hex");
+  const recent = recentIntents.get(recentKey);
+  if (recent && recent.expires > Date.now()) return recent.intent;
+  recentIntents.delete(recentKey);
   let inventory: Awaited<ReturnType<typeof readInventory>>;
   try { inventory = await readInventory(db); }
   catch (error) { return failure(searchFailureReason(error)); }
   const cacheKey = createHash("sha256").update(`faurio-search-v4:${model}:${inventory.fingerprint}:${redactSearch(query).trim().toLowerCase()}`).digest("hex");
-  if (inflight.has(cacheKey)) return inflight.get(cacheKey)!;
+  const flightKey = `${cacheKey}:${recentKey}`;
+  if (inflight.has(flightKey)) return inflight.get(flightKey)!;
   const work = (async () => {
     try {
       const { taxonomy } = inventory;
@@ -61,6 +67,13 @@ export async function resolveSearch(query: string, db: SupabaseClient): Promise<
       return failure(reason);
     }
   })();
-  inflight.set(cacheKey, work);
-  try { return await work; } finally { inflight.delete(cacheKey); }
+  inflight.set(flightKey, work);
+  try {
+    const intent = await work;
+    if (!intent.failure && !intent.unsupported) {
+      if (recentIntents.size >= 100) recentIntents.delete(recentIntents.keys().next().value!);
+      recentIntents.set(recentKey, { expires: Math.min(Date.now() + 15000, inventoryCache?.expires || Date.now()), intent });
+    }
+    return intent;
+  } finally { inflight.delete(flightKey); }
 }

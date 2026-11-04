@@ -1,8 +1,8 @@
 "use client";
 
-import Link from "next/link";
+import Link, { useLinkStatus } from "next/link";
 import { usePathname } from "next/navigation";
-import { Heart, Menu, Search, ShoppingBag, UserRound, X } from "lucide-react";
+import { Heart, LoaderCircle, Menu, Search, ShoppingBag, UserRound, X } from "lucide-react";
 import { useState } from "react";
 import { useShop } from "@/components/shop-provider";
 import { useAuth } from "@/components/auth-provider";
@@ -24,6 +24,11 @@ export function Brand() {
   );
 }
 
+function NavigationProgress() {
+  const { pending } = useLinkStatus();
+  return pending ? <LoaderCircle className="search-spinner" size={12} aria-hidden="true" /> : null;
+}
+
 export function SiteHeader() {
   const pathname = usePathname();
   const [open, setOpen] = useState(false);
@@ -39,7 +44,7 @@ export function SiteHeader() {
           aria-label="Navigare principală"
         >
           <Link href="/catalog" onClick={() => setOpen(false)}>
-            Catalog
+            Catalog <NavigationProgress />
           </Link>
           <Link href="/makers" onClick={() => setOpen(false)}>
             Ateliere
@@ -160,7 +165,7 @@ export function SiteFooter() {
         <Link href="/confidentialitate">Confidențialitate</Link>
       </div>
       <div className="footer-news">
-        <strong>Scrisori din atelier</strong>
+        <strong>Noutăți Faurio</strong>
         {subscribed ? (
           <p>Te-ai înscris. Mulțumim.</p>
         ) : (

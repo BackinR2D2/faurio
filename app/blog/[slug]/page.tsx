@@ -19,6 +19,6 @@ export default async function ArticlePage({ params }: { params: Promise<{ slug: 
   return <main className="article-page">
     <header><p className="eyebrow">{post.category}</p><h1>{post.title}</h1><p>{post.intro}</p><span>{post.date} · {post.reading} de citit</span></header>
     <Image className="article-hero" src={post.image} alt="" width={1400} height={850} priority />
-    <article>{post.sections.map(([title, text]) => <section key={title}><h2>{title}</h2><p>{text}</p></section>)}<blockquote>Obiectele bune nu cer atenție prin zgomot. O câștigă prin felul în care sunt făcute și folosite.</blockquote><Link href="/blog">← Înapoi la jurnal</Link></article>
+    <article>{post.sections.map(([title, text]) => <section key={title}><h2>{title}</h2><p>{text}</p></section>)}<Link href="/blog">← Înapoi la jurnal</Link></article>
   </main>;
 }

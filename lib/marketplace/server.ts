@@ -4,13 +4,22 @@ import { getSupabaseAdmin } from "@/lib/supabase-server";
 import { databaseError, isMissingSchema } from "@/lib/marketplace/http";
 import { layoutSchema, type PublicShop } from "@/lib/marketplace/contracts";
 
+let schemaReadyUntil = 0;
+let schemaProbe: Promise<boolean> | undefined;
+
 export const marketplaceReady = cache(async () => {
   const db = getSupabaseAdmin();
   if (!db) return false;
-  const { error } = await db.from("public_shops").select("id").limit(1);
-  if (isMissingSchema(error)) return false;
-  databaseError(error);
-  return true;
+  if (schemaReadyUntil > Date.now()) return true;
+  if (schemaProbe) return schemaProbe;
+  schemaProbe = (async () => {
+    const { error } = await db.from("public_shops").select("id").limit(1).abortSignal(AbortSignal.timeout(8000));
+    if (isMissingSchema(error)) return false;
+    databaseError(error);
+    schemaReadyUntil = Date.now() + 60000;
+    return true;
+  })();
+  try { return await schemaProbe; } finally { schemaProbe = undefined; }
 });
 
 export async function publicProductSource() {

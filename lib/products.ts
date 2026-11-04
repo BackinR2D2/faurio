@@ -1,4 +1,5 @@
 import "server-only";
+import { cache } from "react";
 import type { CatalogFilters, Product } from "@/lib/catalog";
 import { interpretNaturalQuery } from "@/lib/search-intent";
 import { getSupabaseAdmin } from "@/lib/supabase-server";
@@ -7,6 +8,7 @@ import { resolveSearch } from "@/lib/search/server";
 import type { ResolvedIntent } from "@/lib/search/ai";
 import { diversifyRecommendations } from "@/lib/search/inventory";
 import { searchFailureNotice } from "@/lib/search/status";
+import { catalogCardColumns, legacyCatalogCardColumns, catalogCardProduct } from "@/lib/catalog-projection";
 
 type ProductRow = Record<string, unknown>;
 
@@ -57,14 +59,14 @@ export async function getCatalogProducts({ query = "", page = 1, pageSize = CATA
         return data as { products: ProductRow[]; total: number; page: number; pageSize: number };
       };
       const result = await readPage(discovery ? 1 : safePage);
-      if (!discovery) return { ...result, products: result.products.map(mapProduct), pageCount: Math.ceil(result.total / result.pageSize), configured: true, intent };
+      if (!discovery) return { ...result, products: result.products.map(row => catalogCardProduct(mapProduct(row))), pageCount: Math.ceil(result.total / result.pageSize), configured: true, intent };
       const matched = [...result.products];
       const pages = Math.ceil(result.total / size);
       for (let page = 2; page <= pages; page += 4) {
         const batch = await Promise.all([0, 1, 2, 3].filter(delta => page + delta <= pages).map(delta => readPage(page + delta)));
         for (const part of batch) matched.push(...part.products);
       }
-      const products = diversifyRecommendations(matched.map(mapProduct), intent.productTypes);
+      const products = diversifyRecommendations(matched.map(row => catalogCardProduct(mapProduct(row))), intent.productTypes);
       const pageCount = Math.ceil(products.length / safePageSize);
       const page = Math.max(1, Math.min(safePage, pageCount));
       return { products: products.slice((page - 1) * safePageSize, page * safePageSize), total: products.length, page, pageSize: safePageSize, pageCount, configured: true, intent };
@@ -77,7 +79,7 @@ export async function getCatalogProducts({ query = "", page = 1, pageSize = CATA
     intent = { ...intent, unsupported: true, failure: "AI_SEARCH_MIGRATION_REQUIRED", notice: searchFailureNotice("AI_SEARCH_MIGRATION_REQUIRED") };
     return { products: [], total: 0, page: 1, pageSize: safePageSize, pageCount: 0, configured: true, intent };
   }
-  let request = admin.from(source).select("*", { count: "exact" }).eq("active", true);
+  let request = admin.from(source).select(source === "catalog_products" ? catalogCardColumns : legacyCatalogCardColumns, { count: "exact" }).eq("active", true);
   if (filters.shopId) request = request.eq("shop_id", filters.shopId);
   const category = filters.category && filters.category !== "Toate" ? filters.category : undefined;
   if (category) request = request.eq("category", category);
@@ -108,16 +110,16 @@ export async function getCatalogProducts({ query = "", page = 1, pageSize = CATA
   const total = count || 0;
   const pageCount = Math.ceil(total / safePageSize);
   if (pageCount > 0 && safePage > pageCount) return getCatalogProducts({ query, page: pageCount, pageSize: safePageSize, filters });
-  return { products: (data || []).map((row) => mapProduct(row as ProductRow)), total, page: pageCount ? safePage : 1, pageSize: safePageSize, pageCount, configured: true, intent };
+  return { products: (data || []).map((row) => catalogCardProduct(mapProduct(row as unknown as ProductRow))), total, page: pageCount ? safePage : 1, pageSize: safePageSize, pageCount, configured: true, intent };
 }
 
-export async function getProductById(id: string) {
+export const getProductById = cache(async (id: string) => {
   const admin = getSupabaseAdmin();
   if (!admin) return null;
   const { data, error } = await admin.from(await publicProductSource()).select("*").eq("id", id).eq("active", true).maybeSingle();
   if (error) throw new Error(error.message);
   return data ? mapProduct(data as ProductRow) : null;
-}
+});
 
 export async function getProductsByIds(ids: string[]) {
   const admin = getSupabaseAdmin();

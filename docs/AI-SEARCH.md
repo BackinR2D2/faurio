@@ -16,6 +16,8 @@ Nu este vector search și modelul nu inspectează fiecare fotografie. Rezumatele
 
 `GROQ_API_KEY` și `GROQ_MODEL=openai/gpt-oss-120b` sunt exclusiv server-side. Aplică migrările marketplace și `202610310001_ai_search.sql`. `GROQ_DAILY_SEARCH_LIMIT=200` limitează cererile noi, maximum 1.000; cache-ul comun este de o oră, legat de model și amprenta catalogului.
 
+Interpretările valide au și un cache local de maximum 15 secunde, care nu depășește expirarea indexului de inventar. Acesta evită recitirea interpretării la aplicarea filtrelor și paginării. Cheia locală separă textele originale prin hash; nu reutilizează rezultatul deja îmbinat al altui text care ar deveni identic după mascarea datelor personale. Erorile nu sunt păstrate. Rezultatele, prețurile, stocurile și vizibilitatea produselor sunt citite în continuare din baza de date la fiecare cerere.
+
 Timeout: 12 secunde; maximum 2.000 tokenuri de răspuns. Dacă lipsesc cheia, schema sau cota, ori furnizorul refuză cererea, căutarea returnează HTTP 503 și permite reîncercarea. Nu revine în tăcere la reguli și nu pretinde că lipsa serviciului înseamnă lipsă de produse. Catalogul fără query rămâne navigabil.
 
 Planul gratuit are cote și nu oferă disponibilitate nelimitată: [Groq rate limits](https://console.groq.com/docs/rate-limits), [structured outputs](https://console.groq.com/docs/structured-outputs). `SEARCH_AI_ENABLED=false` este numai un comutator operațional pentru testarea indisponibilității, nu un motor alternativ.
