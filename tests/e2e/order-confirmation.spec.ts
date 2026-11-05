@@ -18,6 +18,27 @@ test("return without a verified payment shows no confirmation or paid amount", a
   await expect(page).toHaveURL(/\/checkout$/);
 });
 
+test("local preview loads its route styles and hydrates consistently after reload and navigation", async ({ page }, info) => {
+  test.skip(Boolean(process.env.E2E_BASE_URL && !["localhost", "127.0.0.1"].includes(new URL(process.env.E2E_BASE_URL).hostname)), "Preview is development-only; never expose fictitious orders in production.");
+  const failures: string[] = [];
+  page.on("pageerror", error => failures.push(error.message));
+  page.on("console", message => { if (message.type() === "error" && /hydrat|server rendered|didn't match/i.test(message.text())) failures.push(message.text()); });
+  await page.goto("/checkout/preview");
+  await expect(page.getByRole("heading", { level: 1 })).toHaveText("Mulțumim, Cristian!");
+  await expect(page.locator(".confirmation-card")).toHaveCSS("display", "grid");
+  await expect(page.locator(".confirmation-card")).toHaveCSS("border-radius", (page.viewportSize()?.width || 0) <= 680 ? "18px" : "20px");
+  await page.reload();
+  await expect(page.locator(".confirmation-card")).toHaveCSS("display", "grid");
+  await expect(page.locator(".site-header .brand small")).toHaveCount(0);
+  await page.getByRole("link", { name: "Înapoi la catalog", exact: true }).click();
+  await expect(page).toHaveURL(/\/catalog$/);
+  await page.goBack();
+  await expect(page.locator(".confirmation-card")).toHaveCSS("display", "grid");
+  await page.evaluate(() => document.fonts.ready);
+  await page.screenshot({ path: info.outputPath(`LOCAL-confirmation-${info.project.name}.png`), fullPage: true });
+  expect(failures).toEqual([]);
+});
+
 for (const width of [360, 640, 1024, 1440]) {
   test(`MOCK confirmed receipt layout stays readable at ${width}px`, async ({ page }, info) => {
     await page.setViewportSize({ width, height: 1000 });
@@ -31,7 +52,7 @@ for (const width of [360, 640, 1024, 1440]) {
     `], { cwd: process.cwd(), encoding: "utf8" });
     await page.locator(".order-confirmation").evaluate((element, html) => { element.outerHTML = html; }, markup);
     await page.evaluate(() => document.fonts.ready);
-    await expect(page.getByRole("heading", { level: 1 })).toHaveText("Comanda este înregistrată.");
+    await expect(page.getByRole("heading", { level: 1 })).toHaveText("Mulțumim, Cristian!");
     await expect(page.locator(".confirmation-code")).toHaveText(receipt.code);
     await expect(page.locator(".order-confirmation")).not.toContainText(/stripe/i);
     await expect(page.getByText("Comandă de test. Nu s-au debitat bani reali.", { exact: true })).toBeVisible();

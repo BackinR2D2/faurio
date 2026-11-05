@@ -15,17 +15,16 @@ export function OrderConfirmation({ receipt }: { receipt: OrderReceipt }) {
   return <main className="order-confirmation">
     <section className="confirmation-card" aria-labelledby="confirmation-title">
       <div className="confirmation-copy">
-        <span className="confirmation-icon"><Check aria-hidden="true" /></span>
-        <p className="confirmation-status">Plată confirmată</p>
-        <h1 id="confirmation-title">Comanda este înregistrată.</h1>
-        <p className="confirmation-lead">{firstName ? `Mulțumim, ${firstName}!` : "Mulțumim pentru comandă!"} Păstrează numărul comenzii pentru orice întrebare.</p>
+        <div className="confirmation-status"><span className="confirmation-icon"><Check aria-hidden="true" /></span>Plată confirmată</div>
+        <h1 id="confirmation-title">{firstName ? `Mulțumim, ${firstName}!` : "Mulțumim pentru comandă!"}</h1>
+        <p className="confirmation-lead">Comanda ta a fost înregistrată.</p>
         <div className="confirmation-actions">
           <Link className="primary-button" href="/cont/profil"><ShoppingBag aria-hidden="true" />Vezi comenzile</Link>
           <Link className="confirmation-catalog" href="/catalog">Înapoi la catalog<ArrowRight aria-hidden="true" /></Link>
         </div>
       </div>
       <aside className="confirmation-summary" aria-label="Rezumatul comenzii">
-        <h2>Comanda ta</h2>
+        <h2>Rezumatul comenzii</h2>
         <dl>
           <div><dt>Număr comandă</dt><dd className="confirmation-code">{receipt.code}</dd></div>
           <div className="confirmation-total"><dt>Total achitat</dt><dd>{money.format(receipt.total)}</dd></div>
@@ -41,8 +40,7 @@ export function OrderConfirmation({ receipt }: { receipt: OrderReceipt }) {
 export function OrderUnconfirmed() {
   return <main className="order-confirmation">
     <section className="confirmation-card confirmation-unconfirmed" aria-labelledby="confirmation-title">
-      <span className="confirmation-icon"><ShoppingBag aria-hidden="true" /></span>
-      <p className="confirmation-status">Plată neconfirmată</p>
+      <div className="confirmation-status"><span className="confirmation-icon"><ShoppingBag aria-hidden="true" /></span>Plată neconfirmată</div>
       <h1 id="confirmation-title">Verifică starea comenzii.</h1>
       <p className="confirmation-lead">Nu putem confirma plata acum. Verifică comenzile înainte de a încerca din nou.</p>
       <div className="confirmation-actions">

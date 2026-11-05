@@ -1,0 +1,57 @@
+.order-confirmation {
+  display: grid;
+  min-height: calc(100svh - 78px);
+  align-content: center;
+  justify-items: center;
+  gap: 24px;
+  padding: clamp(48px, 7vw, 104px) 24px;
+}
+
+.confirmation-card {
+  display: grid;
+  width: min(100%, 920px);
+  grid-template-columns: minmax(0, 1.15fr) minmax(0, 1fr);
+  align-items: stretch;
+  overflow: hidden;
+  border: 1px solid var(--line);
+  border-radius: 20px;
+  background: var(--white);
+  box-shadow: 0 12px 48px rgb(16 47 56 / 3%);
+}
+
+.confirmation-copy { min-width: 0; padding: clamp(28px, 4vw, 48px); }
+.confirmation-status { display: flex; align-items: center; gap: 10px; margin: 0 0 30px; color: var(--ink-soft); font-size: 13px; font-weight: 500; line-height: 1.6; }
+.confirmation-icon { display: grid; width: 32px; height: 32px; flex-shrink: 0; place-items: center; border-radius: 50%; background: rgb(24 143 167 / 9%); color: #11758a; }
+.confirmation-icon svg { width: 17px; height: 17px; }
+.confirmation-card h1 { margin: 0; font-size: clamp(32px, 3vw, 42px); font-weight: 520; letter-spacing: -.025em; line-height: 1.25; overflow-wrap: anywhere; }
+.confirmation-lead { margin: 16px 0 0; color: var(--ink-soft); font-size: 15px; line-height: 1.75; }
+.confirmation-actions { display: flex; flex-direction: column; align-items: flex-start; gap: 12px; margin-top: 32px; }
+.confirmation-actions .primary-button { min-height: 48px; padding: 12px 22px; font-size: 13px; line-height: 1.5; }
+.confirmation-actions .primary-button svg { width: 16px; height: 16px; }
+.confirmation-catalog { display: inline-flex; min-height: 44px; align-items: center; gap: 10px; padding: 0 2px; color: var(--ink-soft); font-size: 13px; line-height: 1.5; }
+.confirmation-catalog svg { width: 16px; height: 16px; }
+.confirmation-catalog:hover { color: var(--ink); text-decoration: underline; text-underline-offset: 4px; }
+.confirmation-summary { display: flex; min-width: 0; flex-direction: column; justify-content: center; border-left: 1px solid var(--line); background: #f3f1e6; padding: clamp(28px, 4vw, 40px); }
+.confirmation-summary h2 { margin: 0 0 28px; font-family: inherit; font-size: 14px; font-weight: 650; line-height: 1.6; }
+.confirmation-summary dl { display: grid; gap: 24px; margin: 0; }
+.confirmation-summary dt { margin-bottom: 8px; color: var(--ink-soft); font-size: 12px; line-height: 1.5; }
+.confirmation-summary dd { margin: 0; line-height: 1.7; }
+.confirmation-summary .confirmation-code { font-family: ui-monospace, SFMono-Regular, Consolas, monospace; font-size: 12px; overflow-wrap: anywhere; }
+.confirmation-total { border-top: 1px solid var(--line); padding-top: 24px; }
+.confirmation-total dd { font-size: 28px; font-weight: 650; line-height: 1.4; letter-spacing: -.025em; }
+.confirmation-document { display: inline-flex; min-height: 44px; align-self: flex-start; align-items: center; gap: 9px; margin-top: 14px; color: var(--ink); font-size: 13px; text-decoration: underline; text-underline-offset: 4px; }
+.confirmation-document svg { width: 15px; height: 15px; }
+.confirmation-test-note { margin: 16px 0 0; color: var(--ink-soft); font-size: 12px; line-height: 1.7; }
+.confirmation-help { margin: 0; color: var(--ink-soft); font-size: 12px; line-height: 1.7; text-align: center; }
+.confirmation-help a { margin-left: 4px; color: var(--ink); text-decoration: underline; text-underline-offset: 4px; }
+.confirmation-unconfirmed { display: block; max-width: 600px; padding: clamp(28px, 4vw, 48px); }
+.confirmation-unconfirmed h1 { max-width: 20ch; }
+.confirmation-preview-label { margin: 0; border-bottom: 1px solid var(--line); padding: 10px 20px; color: var(--ink-soft); font-size: 12px; line-height: 1.5; text-align: center; }
+
+@media (max-width: 680px) {
+  .order-confirmation { min-height: auto; gap: 20px; padding: 40px 20px 48px; }
+  .confirmation-card { max-width: 480px; grid-template-columns: minmax(0, 1fr); border-radius: 18px; }
+  .confirmation-status { margin-bottom: 24px; }
+  .confirmation-summary { border-top: 1px solid var(--line); border-left: 0; }
+  .confirmation-actions .primary-button { width: 100%; }
+}

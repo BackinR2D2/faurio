@@ -343,40 +343,6 @@ h1, h2, h3 { font-family: "Oswald Variable", Oswald, Impact, sans-serif; font-we
 .checkout-totals p:last-child { margin-top: 18px; border-top: 1px solid var(--line); padding-top: 16px; font-family: "Oswald Variable", sans-serif; font-size: 20px; }
 .checkout-summary > small { display: flex; align-items: center; gap: 5px; margin-top: 24px; color: var(--ink-soft); font-size: 8px; }
 .checkout-summary > small svg { width: 13px; }
-.order-confirmation { display: grid; min-height: 72svh; align-content: center; gap: 24px; padding: clamp(40px,6vw,88px) clamp(20px,5vw,72px); }
-.confirmation-card { display: grid; width: min(100%,1000px); grid-template-columns: minmax(0,1.15fr) minmax(0,1fr); align-items: stretch; justify-self: center; overflow: hidden; border: 1px solid var(--line); border-radius: 24px; background: var(--white); }
-.confirmation-copy { min-width: 0; padding: clamp(28px,4vw,52px); }
-.confirmation-icon { display: grid; width: 52px; height: 52px; place-items: center; border-radius: 50%; background: rgba(24,143,167,.1); color: var(--cyan); }
-.confirmation-icon svg { width: 26px; height: 26px; }
-.confirmation-status { margin: 24px 0 10px; color: var(--ink-soft); font-size: 12px; font-weight: 700; line-height: 1.6; }
-.confirmation-card h1 { max-width: 14ch; margin: 0; font-size: clamp(34px,3.3vw,48px); font-weight: 520; letter-spacing: -.025em; line-height: 1.25; }
-.confirmation-lead { max-width: 42ch; margin: 18px 0 0; color: var(--ink-soft); font-size: 15px; line-height: 1.75; overflow-wrap: anywhere; }
-.confirmation-actions { display: flex; flex-wrap: wrap; align-items: center; gap: 18px 24px; margin-top: 30px; }
-.confirmation-actions .primary-button { min-height: 48px; padding: 12px 22px; font-size: 13px; line-height: 1.5; }
-.confirmation-catalog { display: inline-flex; min-height: 44px; align-items: center; gap: 10px; font-size: 13px; line-height: 1.5; }
-.confirmation-catalog:hover, .confirmation-help a:hover { text-decoration: underline; text-underline-offset: 4px; }
-.confirmation-catalog svg { width: 16px; height: 16px; }
-.confirmation-summary { min-width: 0; border-left: 1px solid var(--line); background: rgba(226,219,190,.28); padding: clamp(28px,4vw,48px); }
-.confirmation-summary h2 { margin: 0 0 28px; font-size: 24px; line-height: 1.4; }
-.confirmation-summary dl { display: grid; gap: 24px; margin: 0; }
-.confirmation-summary dt { margin-bottom: 8px; color: var(--ink-soft); font-size: 12px; line-height: 1.5; }
-.confirmation-summary dd { margin: 0; font-size: 16px; line-height: 1.7; }
-.confirmation-summary .confirmation-code { font-family: ui-monospace, SFMono-Regular, Consolas, monospace; font-size: 12px; overflow-wrap: anywhere; }
-.confirmation-total { border-top: 1px solid var(--line); padding-top: 24px; }
-.confirmation-total dd { font-size: 28px; font-weight: 650; line-height: 1.4; }
-.confirmation-document { display: inline-flex; min-height: 44px; align-items: center; gap: 9px; margin-top: 16px; color: var(--ink); font-size: 13px; text-decoration: underline; text-underline-offset: 4px; }
-.confirmation-document svg { width: 16px; height: 16px; }
-.confirmation-test-note { margin: 18px 0 0; color: var(--ink-soft); font-size: 12px; line-height: 1.7; }
-.confirmation-help { margin: 0; color: var(--ink-soft); font-size: 13px; line-height: 1.7; text-align: center; }
-.confirmation-help a { color: var(--ink); text-decoration: underline; text-underline-offset: 4px; }
-.confirmation-unconfirmed { display: block; max-width: 640px; padding: clamp(28px,4vw,52px); }
-.confirmation-unconfirmed h1 { max-width: 20ch; }
-@media(max-width:720px) {
-  .confirmation-card { grid-template-columns: minmax(0,1fr); }
-  .confirmation-summary { border-top: 1px solid var(--line); border-left: 0; }
-  .confirmation-actions { align-items: flex-start; flex-direction: column; gap: 10px; }
-  .confirmation-actions .primary-button { width: 100%; }
-}
 .invoice-card { width: min(550px,100%); margin: 28px 0; background: white; padding: 28px; box-shadow: var(--shadow); text-align: left; }
 .invoice-card > div { display: grid; grid-template-columns: auto 1fr auto; gap: 10px; align-items: center; margin-bottom: 24px; }
 .invoice-card > div small { text-align: right; }
