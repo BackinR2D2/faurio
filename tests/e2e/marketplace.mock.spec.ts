@@ -71,7 +71,7 @@ test("MOCK product publishing: uploaded photo is included in moderated product s
   expect((submitted as {product?:{image?:string}}|null)?.product?.image).toBe(src);expect((submitted as {submit?:boolean}|null)?.submit).toBe(true);
 });
 
-test("MOCK cart: maker selection, no buyer surcharge and honest payment readiness",async({page})=>{
+test("MOCK cart: maker selection, no buyer surcharge and honest payment readiness",async({page},info)=>{
   await page.addInitScript(()=>localStorage.setItem("fir-de-poveste-cart",JSON.stringify([
     {quantity:1,product:{id:"one",name:"Vază atelier unu",shopId:"shop-one",maker:"Atelier Unu",price:100,stock:3,image:"/products/ceramica-luna.avif"}},
     {quantity:1,product:{id:"two",name:"Cană atelier doi",shopId:"shop-two",maker:"Atelier Doi",price:80,stock:2,image:"/products/ceramica-luna.avif"}}
@@ -83,7 +83,15 @@ test("MOCK cart: maker selection, no buyer surcharge and honest payment readines
   await expect(page.locator(".checkout-summary")).toContainText("Cană atelier doi");await expect(page.locator(".checkout-summary")).not.toContainText("Vază atelier unu");
   for(const [label,value] of [["Nume","Test Buyer"],["Email","fixture@example.test"],["Telefon","0700000000"],["Adresă","Adresa fictivă 1"],["Oraș","Brașov"],["Județ","Brașov"],["Cod poștal","500000"]]) await page.getByLabel(label,{exact:true}).fill(value);
   await page.getByRole("button",{name:"Continuă",exact:true}).click();
-  const paymentButton = page.getByRole("button",{name:/Continuă la Stripe/});
+  await expect(page.getByRole("heading", { level: 1 })).toHaveText("Finalizează comanda.");
+  await expect(page.locator(".checkout-main")).not.toContainText(/stripe/i);
+  await expect(page.getByText("Mod de test. Nu se debitează bani reali. Nu folosi un card real.", { exact: true })).toBeVisible();
+  expect(await page.evaluate(() => document.documentElement.scrollWidth <= innerWidth)).toBe(true);
+  await page.screenshot({ path: info.outputPath(`MOCK-checkout-payment-${info.project.name}.png`), fullPage: true });
+  await page.getByRole("button", { name: "← Date de livrare", exact: true }).click();
+  await expect(page.getByLabel("Nume", { exact: true })).toHaveValue("Test Buyer");
+  await page.getByRole("button", { name: "Continuă", exact: true }).click();
+  const paymentButton = page.getByRole("button",{name:/Continuă la plată/});
   if (!process.env.STRIPE_SECRET_KEY?.startsWith("sk_test_") || !process.env.SUPABASE_SERVICE_ROLE_KEY || !process.env.SUPABASE_URL) {
     await expect(paymentButton).toBeDisabled();
     await expect(page.getByText("Plata online este indisponibilă",{exact:true})).toBeVisible();

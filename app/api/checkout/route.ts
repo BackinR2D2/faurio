@@ -15,7 +15,7 @@ export const POST = api(async (request) => {
   const body = await readJson(request, checkoutSchema);
   const stripe = getStripeClient();
   const admin = getSupabaseAdmin();
-  if (!stripe) return Response.json({ error: "Stripe nu este configurat." }, { status: 503 });
+  if (!stripe) return Response.json({ error: "Plata online este indisponibilă momentan." }, { status: 503 });
   if (!admin) return Response.json({ error: "Baza de date nu este configurată." }, { status: 503 });
   const auth = await getRequestAuth(request);
   const fingerprint = createHash("sha256").update(JSON.stringify({ ...body, requestId: undefined, userId: auth?.user.id || null })).digest("hex");
@@ -28,7 +28,7 @@ export const POST = api(async (request) => {
         const session = await stripe.checkout.sessions.retrieve(String(existing.stripe_session_id));
         if (session.status === "complete") return Response.json({ url: `${getSiteUrl()}/checkout/success?session_id=${encodeURIComponent(session.id)}` });
         if (session.status === "open" && session.url) return Response.json({ url: session.url });
-        return Response.json({ error: "Sesiunea Stripe a expirat. Reîncearcă plata.", code: "CHECKOUT_ATTEMPT_UNAVAILABLE" }, { status: 409 });
+        return Response.json({ error: "Sesiunea de plată a expirat. Reîncearcă plata.", code: "CHECKOUT_ATTEMPT_UNAVAILABLE" }, { status: 409 });
       }
     }
   }
@@ -90,7 +90,7 @@ export const POST = api(async (request) => {
       metadata: { order_code: orderCode, user_id: auth?.user.id || "", checkout_fingerprint: fingerprint },
       ...(destination ? { payment_intent_data: { application_fee_amount: commissionMinor, transfer_data: { destination }, metadata: { order_code: orderCode, shop_id: shopId } } } : {}),
     }, { idempotencyKey: orderCode });
-    if (!session.url || session.amount_total == null) throw new Error("Stripe nu a returnat o sesiune completă.");
+    if (!session.url || session.amount_total == null) throw new Error("Pagina de plată nu este disponibilă. Încearcă din nou.");
 
     const paidSubtotal = safeItems.reduce((sum, item) => sum + Math.round(item.product.price * 100 * (1 - discountRate)) * item.quantity, 0) / 100;
     const orderItems = safeItems.map(({ product, quantity }) => ({ id: product.id, name: product.name, quantity, unit_price: product.price, paid_unit_price: Math.round(product.price * 100 * (1 - discountRate)) / 100 }));
@@ -112,6 +112,6 @@ export const POST = api(async (request) => {
     }
     return Response.json({ url: session.url });
   } catch (error) {
-    return Response.json({ error: error instanceof Error ? error.message : "Stripe nu a putut inițializa plata." }, { status: 502 });
+    return Response.json({ error: error instanceof Error && !/stripe/i.test(error.message) ? error.message : "Plata nu a putut fi inițializată. Încearcă din nou." }, { status: 502 });
   }
 });
