@@ -13,6 +13,36 @@ async function studioFixture(page:Page){
   await page.route("**/api/studio",route=>route.fulfill({json:{shops:[{id,slug:"atelier-test-ui",name:"Atelier de test UI",country:"RO",location:"Brașov",status:"active",role:"owner",is_legacy:false}]}}));
 }
 
+test("MOCK Studio: workshop selector matches catalog controls and still switches workshops", async ({ page }, info) => {
+  await studioFixture(page);
+  const secondId = "10000000-0000-4000-8000-000000000002";
+  await page.route("**/api/studio", route => route.fulfill({ json: { shops: [
+    { id, slug: "atelier-test-ui", name: "Atelier de test UI", country: "RO", location: "Brașov", status: "active", role: "owner", is_legacy: false },
+    { id: secondId, slug: "atelier-secundar-ui", name: "Atelier secundar UI", country: "RO", location: "Brașov", status: "suspended", role: "owner", is_legacy: false },
+  ] } }));
+  await page.route("**/api/studio/orders**", route => route.fulfill({ json: { orders: [], total: 0 } }));
+  await page.goto(`/studio/orders?shop=${id}`);
+  const select = page.getByRole("combobox", { name: "Atelierul curent" });
+  await expect(select).toBeVisible();
+  await expect(select).toHaveCSS("appearance", "none");
+  await expect(select).toHaveCSS("background-position", "calc(100% - 14px) 50%");
+  await expect(select).toHaveCSS("padding-right", "42px");
+  await expect(select).toHaveCSS("border-radius", "8px");
+  await expect(select).toHaveCSS("min-height", "44px");
+  await page.locator(".studio-wordmark").focus();
+  await page.keyboard.press("Tab");
+  await expect(select).toBeFocused();
+  await expect(select).toHaveCSS("outline-style", "none");
+  await expect(select).toHaveCSS("border-color", "rgb(16, 47, 56)");
+  expect(await select.evaluate(element => getComputedStyle(element).boxShadow)).toContain("inset");
+  await page.screenshot({ path: info.outputPath(`MOCK-studio-select-${info.project.name}.png`), fullPage: true });
+  await select.selectOption(secondId);
+  await expect(select).toHaveValue(secondId);
+  await expect(page).toHaveURL(new RegExp(`shop=${secondId}`));
+  await expect(page.locator(".studio-status")).toHaveText("Suspendat");
+  expect(await page.evaluate(() => document.documentElement.scrollWidth <= innerWidth)).toBe(true);
+});
+
 test("MOCK Connect: fee consent is required and onboarding redirects only to Stripe",async({page},info)=>{
   await studioFixture(page);
   let requested=false;
