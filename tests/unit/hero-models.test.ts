@@ -6,7 +6,7 @@ import { HERO_INTERVAL_MS, heroModels, shuffledHeroModels } from "../../lib/hero
 
 test("homepage uses only detailed textured models and a three-second interval", () => {
   assert.equal(HERO_INTERVAL_MS, 3000);
-  assert.equal(heroModels.length, 5);
+  assert.ok(heroModels.length >= 7);
   assert.ok(heroModels.every(model => !/ceramic-vase-02|tea-set/.test(model.path)));
   for (const model of heroModels) {
     const path = resolve("public", model.path.slice(1));

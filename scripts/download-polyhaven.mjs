@@ -3,10 +3,10 @@ import { mkdir, readFile, writeFile } from "node:fs/promises";
 import { dirname, join } from "node:path";
 
 const assets = {
-  ceramic_vase_02: "ceramic-vase-02",
   brass_vase_03: "brass-vase-03",
   brass_goblets: "brass-goblets",
-  tea_set_01: "tea-set",
+  bronze_whale_statue: "bronze-whale",
+  brass_vase_04: "brass-vase-04",
 };
 
 async function download(url, destination, md5) {
@@ -18,7 +18,9 @@ async function download(url, destination, md5) {
   await writeFile(destination, buffer);
 }
 
-for (const [asset, folder] of Object.entries(assets)) {
+const requested = process.argv.slice(2);
+if (requested.some(asset => !Object.hasOwn(assets, asset))) throw new Error("Unknown Poly Haven asset");
+for (const [asset, folder] of Object.entries(assets).filter(([asset]) => !requested.length || requested.includes(asset))) {
   const response = await fetch(`https://api.polyhaven.com/files/${asset}`);
   if (!response.ok) throw new Error(`Manifest invalid: ${asset}`);
   const manifest = await response.json();

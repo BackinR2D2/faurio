@@ -26,6 +26,12 @@ test("MOCK transport: Studio theme preview, autosave, reload, undo and accessibl
   });
   await page.goto(`/studio/appearance?shop=${id}`);
   await expect(page.getByRole("heading", { name: "Fă-l al tău." })).toBeVisible();
+  for (const select of await page.locator("select").all()) {
+    await expect(select).toHaveCSS("appearance", "none");
+    await expect(select).toHaveCSS("padding-right", "42px");
+    await expect(select).toHaveCSS("border-radius", "8px");
+    await expect(select).not.toHaveCSS("background-image", "none");
+  }
   await page.getByRole("button", { name: "Studio de lut", exact: true }).click();
   await expect(page.locator(".preview-frame .maker-storefront")).toHaveClass(/theme-clay/);
   await expect(page.getByText("Ciornă salvată", { exact: true }).first()).toBeVisible();

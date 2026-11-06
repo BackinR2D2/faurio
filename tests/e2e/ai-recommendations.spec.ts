@@ -3,6 +3,52 @@ import { expect, test } from "@playwright/test";
 const story = "vreau sa cumpar un cadou unchiului meu care e profesor, in buget de 250 de lei maxim";
 const unavailable = process.env.SEARCH_FAILURE_E2E === "1";
 
+const preciseCases = [
+  { query: "Caut un set de pahare sub 200 lei", types: ["Set de pahare"], max: 200 },
+  { query: "O cană sau un jurnal, cel mult 200 de lei", types: ["Cană", "Jurnal"], max: 200 },
+  { query: "O cană albă sau albastră, maxim 160 lei", types: ["Cană"], max: 160, colors: true },
+  { query: "Pahare între 80,50 și 150,75 lei, în stoc", types: ["Pahar", "Set de pahare"], min: 80.5, max: 150.75 },
+  { query: "Cadou pentru profesor, fără vaze sau căni, nu maro, buget maxim 250 lei", max: 250, exclusions: true },
+  { query: "laptop maro sub 100 lei", max: 100, absent: true },
+  { query: "O cană pentru unchiul meu care este profesor și are ochi albaștri, sub 180 lei", types: ["Cană"], max: 180, storyAttributes: true },
+];
+for (const fixture of preciseCases) {
+  test(`LIVE precise search: ${fixture.query}`, async ({ request }) => {
+    test.skip(unavailable || !process.env.GROQ_API_KEY || !process.env.SUPABASE_SERVICE_ROLE_KEY, "Requires real Groq and Supabase.");
+    const response = await request.post("/api/search", { data: { query: fixture.query } });
+    expect(response.status()).toBe(200);
+    const result = await response.json();
+    expect(result.intent.engine).toBe("groq");
+    expect(result.intent.filters.maxPrice).toBe(fixture.max);
+    if (fixture.types) expect(new Set(result.intent.productTypes)).toEqual(new Set(fixture.types));
+    if (fixture.min) expect(result.intent.filters.minPrice).toBe(fixture.min);
+    if (fixture.colors) {
+      expect(result.intent.filters.colorMatch).toBe("any");
+      expect(new Set(result.intent.filters.colors)).toEqual(new Set(["alb", "albastru"]));
+    }
+    if (fixture.exclusions) {
+      expect(result.intent.filters.excludedProductTypes).toEqual(expect.arrayContaining(["Vază", "Cană"]));
+      expect(result.intent.filters.excludedColors).toContain("maro");
+    }
+    if (fixture.absent) expect(result.products).toEqual([]);
+    else expect(result.products.length).toBeGreaterThan(0);
+    if (fixture.storyAttributes) {
+      expect(result.intent.filters.colors).toEqual([]);
+      expect(result.intent.requiredTerms).toEqual([]);
+    }
+    for (const product of result.products) {
+      expect(product.price).toBeLessThanOrEqual(fixture.max);
+      if (fixture.min) expect(product.price).toBeGreaterThanOrEqual(fixture.min);
+      if (fixture.types) expect(fixture.types).toContain(product.productType);
+      if (fixture.exclusions) {
+        expect(["Vază", "Cană"]).not.toContain(product.productType);
+        expect(product.color).not.toMatch(/\bmaro\b/i);
+      }
+      if (fixture.colors) expect(product.color).toMatch(/\b(?:alb|albastru)\b/i);
+    }
+  });
+}
+
 test("LIVE AI gift story recommends grounded teaching and reading products within budget", async ({ page, request }, info) => {
   test.skip(unavailable || !process.env.GROQ_API_KEY || !process.env.SUPABASE_SERVICE_ROLE_KEY, "Requires real Groq and Supabase; no fake recommendations.");
   const response = await request.post("/api/search", { data: { query: story } });

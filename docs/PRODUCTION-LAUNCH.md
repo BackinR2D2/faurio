@@ -1,8 +1,8 @@
 # Faurio — GitHub, integrare și pilot public
 
-Actualizat: 1 noiembrie 2026. Acest ghid este pentru un pilot public cu plăți Stripe TEST. Publicarea pe internet nu echivalează cu autorizarea comercială sau cu testarea încasărilor reale.
+Actualizat: 7 noiembrie 2026. Acest ghid este pentru un pilot public cu plăți Stripe TEST. Publicarea pe internet nu echivalează cu autorizarea comercială sau cu testarea încasărilor reale.
 
-Starea activării proiectului existent este în [ACTIVATION-STATUS.md](ACTIVATION-STATUS.md). Primele șapte migrări au fost aplicate pe `ae_proj` la 31 octombrie 2026; a opta, pentru închiderea atelierelor, la 1 noiembrie. NU le executa din nou acolo. Instrucțiunile rămân valabile pentru un proiect nou sau pentru migrări încă neaplicate.
+Starea verificărilor este în [TEST-REPORT.md](TEST-REPORT.md). Cele nouă migrări de mai jos sunt aplicate în `ae_proj`. NU le executa din nou acolo. Instrucțiunile rămân valabile pentru o bază nouă sau migrări încă neaplicate.
 
 ## 1. Activează baza de date existentă
 
@@ -16,6 +16,7 @@ Verificarea inițială a găsit catalogul de bază, dar nu tabelele marketplace.
 6. `supabase/migrations/202610310003_shop_media.sql`
 7. `supabase/migrations/202610310004_buyer_trust.sql`
 8. `supabase/migrations/202611010001_shop_lifecycle.sql` — închidere numai de proprietar, cu păstrarea istoricului și blocare pentru comenzi/retururi deschise.
+9. `supabase/migrations/202611060001_search_constraints.sql` — excluderi de tip/culoare și alternative explicite de culori/materiale.
 
 Nu rula din nou `schema.sql` sau `seed.sql` peste datele existente. Nu executa o migrare deja aplicată. Migrarea media creează bucket-ul privat `shop-media`; numai serverul poate încărca în el. Fotografiile sunt servite la adrese publice `/media/[uuid].webp`, inclusiv în ciornă, lucru explicat înainte de upload. Nu încărca date personale. Sunt limitate la 30 de fișiere/zi și 200/atelier, input 5 MB, 16 milioane pixeli, WebP maximum 1600 × 1600 fără metadate.
 

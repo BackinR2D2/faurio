@@ -1,7 +1,7 @@
-# Dovezi generate
+# Capturi și rapoarte
 
-Fișierele `home-*`, `search-*` și `sell-*` sunt capturi Playwright ale aplicației locale care rulează. Cele cu prefix `MOCK-editor-*` folosesc sesiune și transport API simulate în contextul izolat al testului de interfață. Ele verifică randarea/autosalvarea din UI, NU demonstrează o autentificare Supabase reală sau un magazin publicat extern.
+Capturile cu prefix MOCK verifică interfața în contexte izolate cu autentificare și API simulate. Nu dovedesc înregistrarea unui utilizator, publicarea unui atelier, livrarea unui email sau încasarea unei plăți în serviciile externe.
 
-Datele publice din catalogul existent sunt seed demonstrativ. Testele SQL execută schema și migrarea în PostgreSQL local PGlite; nu sunt capturi din baza externă.
+Capturile locale fără acest prefix trebuie interpretate împreună cu testul care le generează. Artefactele ultimei rulări sunt în `test-results/` și `playwright-report/`, excluse din Git. Testele SQL folosesc PostgreSQL local PGlite, nu baza publică.
 
-Nu există capturi ale unei plăți, încasări seller, facturi fiscale sau deployment nou în această livrare. Acestea se capturează numai după testarea serviciilor respective. Rapoartele Lighthouse, dacă prezente, provin din build local de producție, nu din PageSpeed pe domeniul public.
+Pentru predare, păstrează separat capturile domeniului public, confirmarea unei plăți TEST efectuate personal și PageSpeed public. Ascunde datele personale și referințele sensibile. Nu atribui unui scor Lighthouse local valoarea unui rezultat PageSpeed public.

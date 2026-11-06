@@ -7,14 +7,14 @@ Fiecare căutare nevidă este interpretată pe server prin Groq, cu modelul impl
 1. Serverul citește toate produsele publicate din `catalog_products`, în loturi de 500. Indexul se păstrează 30 de secunde. Modelul primește tipurile disponibile, intervalele de preț, stocul agregat și exemple reprezentative, nu clienți sau comenzi.
 2. Modelul interpretează maximum 1.200 caractere într-o schemă JSON strictă. O poveste generează tipuri potrivite și motive practice: pentru un profesor, jurnale, semne de carte sau organizare. O cerere precisă rămâne precisă: pahare nu înseamnă căni, iar un tricou absent nu este înlocuit cu decorațiuni.
 3. Validarea Zod și parserul local protejează bugetele și cerințele explicite. Tipurile recomandate trebuie să existe în taxonomia publicată. Pregătirea rapidă și personalizarea nu sunt presupuse fără dovezi în cerere.
-4. PostgreSQL aplică restricțiile pe întregul catalog publicat. Relevanța combină termenii interpretați cu atributele reale. Pentru povești, familiile de produse sunt diversificate înainte de paginare, astfel încât edițiile aceluiași produs să nu umple prima pagină. Sortarea explicită după preț rămâne globală.
+4. PostgreSQL aplică restricțiile pe întregul catalog publicat. Culorile sunt comparate ca termeni întregi: alb nu se potrivește cu albastru. Excluderile de tip, culoare și material sunt obligatorii; alternativele explicite („alb sau albastru”) folosesc OR, iar atributele combinate folosesc AND. Relevanța combină termenii interpretați cu atributele reale. Pentru povești, familiile de produse sunt diversificate înainte de paginare, astfel încât edițiile aceluiași produs să nu umple prima pagină. Sortarea explicită după preț rămâne globală.
 5. Sunt returnate numai produse reale, active, moderate și publicate. Nu există completare cu produse fără legătură.
 
 Nu este vector search și modelul nu inspectează fiecare fotografie. Rezumatele pe tip au maximum patru familii exemplu; relevanța trebuie evaluată și pentru categorii noi. Interpretarea este probabilistică, nu o garanție de înțelegere perfectă a oricărei povești.
 
 ## Configurare și indisponibilitate
 
-`GROQ_API_KEY` și `GROQ_MODEL=openai/gpt-oss-120b` sunt exclusiv server-side. Aplică migrările marketplace și `202610310001_ai_search.sql`. `GROQ_DAILY_SEARCH_LIMIT=200` limitează cererile noi, maximum 1.000; cache-ul comun este de o oră, legat de model și amprenta catalogului.
+`GROQ_API_KEY` și `GROQ_MODEL=openai/gpt-oss-120b` sunt exclusiv server-side. Aplică migrările marketplace, `202610310001_ai_search.sql` și `202611060001_search_constraints.sql` numai dacă nu sunt deja aplicate. `GROQ_DAILY_SEARCH_LIMIT=200` limitează cererile noi, maximum 1.000; cache-ul comun este de o oră, legat de model și amprenta catalogului.
 
 Interpretările valide au și un cache local de maximum 15 secunde, care nu depășește expirarea indexului de inventar. Acesta evită recitirea interpretării la aplicarea filtrelor și paginării. Cheia locală separă textele originale prin hash; nu reutilizează rezultatul deja îmbinat al altui text care ar deveni identic după mascarea datelor personale. Erorile nu sunt păstrate. Rezultatele, prețurile, stocurile și vizibilitatea produselor sunt citite în continuare din baza de date la fiecare cerere.
 

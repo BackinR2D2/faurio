@@ -1,12 +1,12 @@
-# Demonstrație de 5–8 minute
+# Demonstrație de 8 minute
 
-Pregătire: rulează migrarea din DEPLOYMENT.md într-un proiect de staging, păstrează 720 produse demo, creează două conturi de creator și un operator confirmat. Aprobă atelierele și pregătește câte o piesă. Aceste conturi NU au fost create automat în Supabase în această livrare.
+Deschide [Faurio](https://faurio-marketplace.netlify.app). Pregătește un cumpărător confirmat și un atelier aprobat, cu pagină și produs publicate. Configurează încasările TEST personal din Studio. Nu rerula seed-ul sau migrările deja aplicate.
 
-1. **0:00–1:00 — căutare:** deschide `/`, caută „pahare sub 100 lei”. Arată tipul și bugetul interpretat, doar pahare din inventar și URL-ul păstrat la paginare. „Show gifts under 50 EUR” arată limita de monedă fără conversii inventate.
-2. **1:00–2:00 — produs și coș:** intră pe un produs legacy, arată materialul, stocul și timpul de pregătire. Actualizează cantitatea în coș. Nu prezenta imaginile seed ca fotografii individuale autentificate sau ratinguri ca recenzii verificate.
-3. **2:00–4:00 — identitatea atelierului:** creator A în `/studio/appearance`, alege Clay, scrie povestea și mută o secțiune cu tastatura. Așteaptă salvarea. Pagina publică rămâne neschimbată până la Publică. Creator B alege Botanical și păstrează conținutul propriu.
-4. **4:00–5:00 — produs și moderare:** creator A trimite o piesă spre verificare. Operatorul o aprobă în `/admin/marketplace` cu motiv. Arată intrarea de audit și pagina atelierului. Suspendarea ascunde imediat atelierul și piesele.
-5. **5:00–6:00 — izolare:** arată raportul `npm test`, inclusiv shop ID falsificat, ciorne private, conflict de revizie și refuzul checkout-ului pentru un seller fără plăți. Nu este nevoie să expui chei sau date personale.
-6. **6:00–8:00 — plată de test pregătită separat:** doar un produs legacy, Stripe listener pornit, card de test 4242. Confirmă statusul paid în baza staging și evenimentul webhook. Arată documentul Stripe cu denumirea corectă. Dacă acest test nu a fost pregătit/executat, spune explicit că nu este demonstrat; nu folosi o captură simulată drept dovadă de tranzacție.
+1. **Căutare (1 minut).** „pahare sub 100 lei”, apoi „vreau să cumpăr un cadou unchiului meu care e profesor, în buget de 250 lei maxim”. Arată doar produse reale în buget. „tricou maro sub 100 lei” trebuie să nu recomande decorațiuni în locul tricoului.
+2. **Catalog și produs (1 minut).** Aplică filtre, schimbă sortarea și pagina. Deschide un produs, arată materialul, stocul și timpul de pregătire. Adaugă-l în coș și modifică o cantitate.
+3. **Atelier (2 minute).** În `/studio/appearance`, schimbă tema și povestea, reordonează o secțiune, așteaptă autosalvarea. Publică și deschide pagina atelierului.
+4. **Produs și moderare (1 minut).** Încarcă o fotografie proprie și trimite produsul la verificare. Din contul operatorului, aprobă-l cu motiv la `/admin/marketplace`. Arată produsul publicat.
+5. **Plată TEST (2 minute).** Plasează o comandă cu un card de test permis de procesator. Plata este executată personal de prezentator. Verifică confirmarea, istoricul, stocul și emailul. Pentru produsul unui creator verifică separat comisionul și transferul în sandbox, nu doar comanda atelierului intern.
+6. **Comandă și livrare (1 minut).** În `/studio/orders`, treci comanda în pregătire. Pentru expediere introdu curier și număr de urmărire reale pentru testul demonstrat. Nu prezenta un cod inventat drept colet real.
 
-Încheie cu raportul Lighthouse local și lista etapelor rămase. PageSpeed public și documentele fiscale se verifică separat înainte de lansarea comercială.
+Încheie cu PageSpeed pentru domeniul public și rezultatele testelor. Nu arăta fișiere `.env`, tokenuri, parole, date personale sau capturi simulate drept plăți reale. Dacă un pas financiar nu este finalizat, menționează exact limita în prezentare.

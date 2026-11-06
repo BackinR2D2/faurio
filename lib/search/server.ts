@@ -44,7 +44,7 @@ export async function resolveSearch(query: string, db: SupabaseClient): Promise<
   let inventory: Awaited<ReturnType<typeof readInventory>>;
   try { inventory = await readInventory(db); }
   catch (error) { return failure(searchFailureReason(error)); }
-  const cacheKey = createHash("sha256").update(`faurio-search-v4:${model}:${inventory.fingerprint}:${redactSearch(query).trim().toLowerCase()}`).digest("hex");
+  const cacheKey = createHash("sha256").update(`faurio-search-v7:${model}:${inventory.fingerprint}:${redactSearch(query).trim().toLowerCase()}`).digest("hex");
   const flightKey = `${cacheKey}:${recentKey}`;
   if (inflight.has(flightKey)) return inflight.get(flightKey)!;
   const work = (async () => {

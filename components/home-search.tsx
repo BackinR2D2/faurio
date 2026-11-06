@@ -66,7 +66,7 @@ export function HomeSearch() {
     </div>
     <div className="home-art">
       <div className="art-halo" />
-      <div className={`home-art-fallback${sceneReady ? " is-ready" : ""}`} aria-hidden={sceneReady}><Image src="/models/hero-fallback.png" alt="Vază ceramică pictată — previzualizare a unei piese de atelier" fill sizes="(max-width: 800px) 360px, 50vw" priority fetchPriority="high" /></div>
+      <div className={`home-art-fallback${sceneReady ? " is-ready" : ""}${sceneFailed ? " is-failed" : ""}`} aria-hidden={sceneReady}><Image src="/models/hero-fallback.png" alt="Vază ceramică pictată — previzualizare a unei piese de atelier" fill sizes="(max-width: 800px) 360px, 50vw" /></div>
       {loadScene && <ArtisanOrbit onReady={onSceneReady} onUnavailable={onSceneUnavailable} />}
     </div>
   </section></main>;

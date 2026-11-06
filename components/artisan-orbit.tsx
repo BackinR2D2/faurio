@@ -148,8 +148,10 @@ export function ArtisanOrbit({ onReady, onUnavailable }: { onReady?: () => void;
         try {
           const item = await load(model);
           if (!active) { release(item); break; }
+          try { await renderer.compileAsync(item.root, camera, scene); }
+          catch (error) { release(item); throw error; }
+          if (!active) { release(item); break; }
           upcoming = item;
-          renderer.compile(item.root, camera, scene);
           break;
         } catch { if (active) failed.add(model.path); }
       }
@@ -167,16 +169,11 @@ export function ArtisanOrbit({ onReady, onUnavailable }: { onReady?: () => void;
       controls.reset();
       resize();
       stage.add(current.root);
-      host.dataset.model = current.model.path;
-      host.setAttribute("aria-label", `Model 3D: ${current.model.name}`);
-      host.dataset.loaded = "true";
       lastFrame = performance.now();
-      setBusy(false);
-      onReady?.();
       const complete = () => { if (previous) release(previous); transitioning = false; if (!reducedMotion) void prepareNext(); };
-      if (reducedMotion) { complete(); return; }
+      if (reducedMotion || !previous) { current.root.scale.setScalar(1); complete(); return; }
       if (previous) gsap.to(previous.root.scale, { x: 0, y: 0, z: 0, duration: 0.25, ease: "power2.in" });
-      gsap.fromTo(current.root.scale, { x: 0.01, y: 0.01, z: 0.01 }, { x: 1, y: 1, z: 1, duration: 0.65, ease: "power3.out", onComplete: complete });
+      gsap.fromTo(current.root.scale, { x: 0.85, y: 0.85, z: 0.85 }, { x: 1, y: 1, z: 1, duration: 0.45, ease: "power2.out", onComplete: complete });
     };
 
     const resize = () => {
@@ -252,7 +249,14 @@ export function ArtisanOrbit({ onReady, onUnavailable }: { onReady?: () => void;
       controls.update();
       controls.target.clampLength(0, 0.18);
       renderer.render(scene, camera);
-      if (waitingForFirstFrame) { elapsed = 0; lastFrame = performance.now(); waitingForFirstFrame = false; }
+      if (waitingForFirstFrame && current) {
+        host.dataset.model = current.model.path;
+        host.setAttribute("aria-label", `Model 3D: ${current.model.name}`);
+        host.dataset.loaded = "true";
+        setBusy(false);
+        onReady?.();
+        elapsed = 0; lastFrame = performance.now(); waitingForFirstFrame = false;
+      }
     };
     animationFrame = requestAnimationFrame(render);
 

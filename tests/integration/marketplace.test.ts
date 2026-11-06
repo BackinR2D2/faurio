@@ -38,7 +38,7 @@ before(async () => {
   await db.exec("insert into public.products(id,name,category,price,stock,active) values ('legacy-vase','Legacy vase','Ceramică',100,5,true)");
   await db.exec(await readFile(new URL("../../supabase/migrations/202610300001_marketplace.sql", import.meta.url), "utf8"));
   await db.exec(await readFile(new URL("../../supabase/migrations/202610300002_product_media.sql", import.meta.url), "utf8"));
-  for (const migration of ["202610300003_order_emails.sql", "202610310001_ai_search.sql", "202610310002_connect_and_fees.sql", "202610310003_shop_media.sql", "202610310004_buyer_trust.sql", "202611010001_shop_lifecycle.sql"]) await db.exec(await readFile(new URL(`../../supabase/migrations/${migration}`, import.meta.url), "utf8"));
+  for (const migration of ["202610300003_order_emails.sql", "202610310001_ai_search.sql", "202610310002_connect_and_fees.sql", "202610310003_shop_media.sql", "202610310004_buyer_trust.sql", "202611010001_shop_lifecycle.sql", "202611060001_search_constraints.sql"]) await db.exec(await readFile(new URL(`../../supabase/migrations/${migration}`, import.meta.url), "utf8"));
   await db.query("insert into auth.users(id,email) values($1,'a@example.test'),($2,'b@example.test'),($3,'operator@example.test')", [sellerA, sellerB, operator]);
 });
 after(async () => { await db.close(); });
@@ -211,6 +211,21 @@ test("shared AI quota is bounded across clients, and cache/usage tables are priv
   assert.equal(await sqlValue<boolean>("select public.claim_search_ai_slot(2) as value"),false);
   assert.equal(await sqlValue<boolean>("select public.claim_search_ai_slot(0) as value"),false);
   await asUser(sellerA, async()=> { await assert.rejects(db.exec("select * from public.search_intent_cache"),/permission denied/); await assert.rejects(db.exec("select public.claim_search_ai_slot(1000)"),/permission denied/); });
+});
+test("search applies alternatives and explicit exclusions before counting and pagination", async () => {
+  await db.exec("begin");
+  try {
+    for (const [id, type, material, color] of [["alternative-a", "Cană", "ceramică", "alb"], ["alternative-b", "Cană", "ceramică", "albastru"], ["alternative-c", "Vază", "ceramică", "maro"], ["alternative-d", "Colier", "argint", "argintiu"]]) {
+      await db.query("insert into public.products(id,name,product_type,category,price,stock,active,listing_status,material,color,description) values($1,$1,$2,'Ceramică',90,2,true,'published',$3,$4,'Test alternative')", [id, type, material, color]);
+    }
+    const search = (filters: Record<string, unknown>) => sqlValue<{ total: number; products: { id: string }[] }>("select public.search_marketplace_catalog($1,'{}',1,48) as value", [{ productTypes: [], requiredTerms: ["Test alternative"], rankingTerms: [], filters }]);
+    assert.equal((await search({ colors: ["alb", "albastru"], colorMatch: "any" })).total, 2);
+    assert.equal((await search({ colors: ["alb", "albastru"], colorMatch: "all" })).total, 0);
+    assert.equal((await search({ excludedProductTypes: ["Vază"], excludedColors: ["argintiu"] })).total, 2);
+    assert.equal((await search({ materials: ["argint", "ceramică"], materialMatch: "any", excludedMaterials: ["in"] })).total, 4);
+    assert.equal((await search({ materials: ["argint", "ceramică"], materialMatch: "all" })).total, 0);
+    assert.equal((await search({ excludedMaterials: ["argint"] })).total, 3);
+  } finally { await db.exec("rollback"); }
 });
 
 test("Connect eligibility enables only the correct seller; fee snapshots reconcile and seller orders are isolated", async () => {

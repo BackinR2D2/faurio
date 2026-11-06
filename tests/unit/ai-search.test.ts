@@ -4,7 +4,7 @@ import { aiIntentSchema, extractGroqIntent, mergeAiIntent, redactSearch, type Ai
 import { searchFailureNotice, searchFailureReason } from "../../lib/search/status.ts";
 
 const taxonomy = { productTypes: ["Pahar", "Vază", "Cană", "Jurnal", "Semn de carte"], categories: ["Ceramică", "Sticlărie", "Papetărie"], materials: ["ceramică", "sticlă"], colors: ["bej", "maro"] };
-const empty: AiIntent = { queryMode: "exact", productTypes: [], requiredTerms: [], rankingTerms: [], category: null, minPrice: null, maxPrice: null, colors: [], materials: [], excludedMaterials: [], personalizable: false, inStock: false, ready: false, evidence: { personalizable: null, inStock: null, ready: null }, explanation: "", recommendations: [] };
+const empty: AiIntent = { queryMode: "exact", productTypes: [], requiredTerms: [], rankingTerms: [], category: null, minPrice: null, maxPrice: null, colors: [], materials: [], excludedMaterials: [], excludedColors: [], excludedProductTypes: [], colorMatch: "all", materialMatch: "all", personalizable: false, inStock: false, ready: false, evidence: { personalizable: null, inStock: null, ready: null }, explanation: "", recommendations: [] };
 
 test("search diagnostics distinguish setup failures without leaking raw errors or credentials", () => {
   assert.equal(searchFailureReason(new Error("AI_SEARCH_MIGRATION_REQUIRED")), "AI_SEARCH_MIGRATION_REQUIRED");
@@ -35,6 +35,47 @@ test("AI can turn a story into soft semantic vocabulary without requiring story 
   assert.equal(result.engine, "groq"); assert.ok(result.rankingTerms?.includes("cafea")); assert.deepEqual(result.requiredTerms, []);
   assert.deepEqual(result.productTypes, ["Cană"]);
   assert.equal(result.unsupported, false);
+});
+test("sets, multiple product families, exclusions and decimal budgets stay precise", () => {
+  const catalog = { ...taxonomy, productTypes: [...taxonomy.productTypes, "Set de pahare"] };
+  const set = mergeAiIntent("un set de pahare, între 80,50 și 150,75 lei", { ...empty, productTypes: ["Pahar"] }, catalog);
+  assert.deepEqual(set.productTypes, ["Set de pahare"]);
+  assert.equal(set.filters.minPrice, 80.5);
+  assert.equal(set.filters.maxPrice, 150.75);
+  const mixed = mergeAiIntent("o cană sau un jurnal sub 200 lei", { ...empty, category: "Ceramică", productTypes: ["Cană", "Jurnal"] }, catalog);
+  assert.deepEqual(mixed.productTypes, ["Cană", "Jurnal"]);
+  assert.equal(mixed.filters.category, undefined);
+  const negative = mergeAiIntent("cadou profesor, fără vaze, nu maro, nu e urgent", { ...empty, queryMode: "discovery", colors: ["maro"], recommendations: [{ productType: "Vază", reason: "Decor." }, { productType: "Jurnal", reason: "Pentru notițe." }] }, catalog);
+  assert.deepEqual(negative.productTypes, ["Jurnal"]);
+  assert.deepEqual(negative.filters.excludedProductTypes, ["Vază"]);
+  assert.deepEqual(negative.filters.excludedColors, ["maro"]);
+  assert.deepEqual(negative.filters.colors, []);
+  assert.equal(negative.filters.ready, false);
+  const alternatives = mergeAiIntent("o cană albă sau albastră", { ...empty, colorMatch: "any", colors: ["albă", "albastră"] }, catalog);
+  assert.equal(alternatives.filters.colorMatch, "any");
+  assert.deepEqual(new Set(alternatives.filters.colors), new Set(["alb", "albastru"]));
+});
+test("provider schema-generation failure is retried once, but other errors are not hidden", async () => {
+  let calls = 0;
+  const provider = (async () => {
+    calls++;
+    return calls === 1 ? Response.json({ error: { code: "json_validate_failed" } }, { status: 400 }) : Response.json({ choices: [{ message: { content: JSON.stringify(empty) } }] });
+  }) as typeof fetch;
+  assert.deepEqual(await extractGroqIntent("pahar", taxonomy, "fixture", undefined, provider), empty);
+  assert.equal(calls, 2);
+  calls = 0;
+  await assert.rejects(extractGroqIntent("pahar", taxonomy, "fixture", undefined, (async () => { calls++; return Response.json({ error: { code: "json_validate_failed" } }, { status: 400 }); }) as typeof fetch));
+  assert.equal(calls, 2);
+});
+test("recipient stories do not become literal product features or inferred product colors", () => {
+  const result = mergeAiIntent("O cană pentru unchiul meu care este profesor și are ochi albaștri, sub 180 lei", { ...empty, productTypes: ["Cană"], category: "Ceramică", maxPrice: 180 }, taxonomy);
+  assert.deepEqual(result.productTypes, ["Cană"]);
+  assert.deepEqual(result.requiredTerms, []);
+  assert.deepEqual(result.filters.recipients, []);
+  assert.deepEqual(result.filters.colors, []);
+  assert.equal(result.filters.category, undefined);
+  assert.equal(result.filters.maxPrice, 180);
+  assert.deepEqual(mergeAiIntent("pahar cu dinozauri", empty, taxonomy).requiredTerms, ["dinozauri"]);
 });
 test("teacher gift stories select useful inventory types, never mandatory recipient words", () => {
   const ai = { ...empty, queryMode: "discovery" as const, maxPrice: 500, explanation: "Idei pentru notițe și lectură.", recommendations: [{ productType: "Jurnal", reason: "Pentru notițe la cursuri." }, { productType: "Semn de carte", reason: "Pentru a păstra pagina în timpul lecturii." }] };

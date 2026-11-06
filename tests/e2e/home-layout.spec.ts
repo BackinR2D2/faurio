@@ -70,9 +70,11 @@ test("3D scene changes detailed objects automatically without carousel controls"
   await expect(carousel.locator("canvas")).toHaveCount(1);
   const canvas = carousel.locator("canvas");
   const canvasHandle = await canvas.elementHandle();
-  await expect.poll(() => page.evaluate(() => (window as unknown as { sceneChanges: unknown[] }).sceneChanges.length), { timeout: 60000 }).toBeGreaterThanOrEqual(5);
-  const changes = await page.evaluate(() => (window as unknown as { sceneChanges: { path: string; time: number }[] }).sceneChanges.slice(0, 5));
-  expect(new Set(changes.map(item => item.path)).size).toBe(5);
+  await expect.poll(() => page.evaluate(() => (window as unknown as { sceneChanges: unknown[] }).sceneChanges.length), { timeout: 60000 }).toBeGreaterThanOrEqual(7);
+  const changes = await page.evaluate(() => (window as unknown as { sceneChanges: { path: string; time: number }[] }).sceneChanges.slice(0, 7));
+  expect(new Set(changes.map(item => item.path)).size).toBe(7);
+  expect(changes.some(item => /bronze-whale/.test(item.path))).toBe(true);
+  expect(changes.some(item => /brass-vase-04/.test(item.path))).toBe(true);
   expect(changes.some(item => /ceramic-vase-02|tea-set/.test(item.path))).toBeFalsy();
   for (let index = 1; index < changes.length; index++) expect(changes[index].time - changes[index - 1].time).toBeGreaterThanOrEqual(2900);
   await expect(carousel.locator("canvas")).toHaveCount(1);

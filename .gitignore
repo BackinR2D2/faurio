@@ -4,6 +4,7 @@
 /.netlify/
 /playwright-report/
 /test-results/
+/.private-backups/
 /out/
 /dist/
 /coverage/

@@ -24,7 +24,7 @@ if (!url || !key) {
     databaseDirectAccessConfigured: Boolean(process.env.DATABASE_URL),
   }, null, 2));
   if (shops.error || !Array.isArray(shops.data)) {
-    console.error("Marketplace schema is not ready. See docs/DEPLOYMENT.md; no database mutations were performed.");
+    console.error("Marketplace schema is not ready. See docs/PRODUCTION-LAUNCH.md; no database mutations were performed.");
     process.exitCode = 2;
   }
 }

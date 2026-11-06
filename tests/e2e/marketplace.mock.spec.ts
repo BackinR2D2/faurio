@@ -89,6 +89,11 @@ test("MOCK product publishing: uploaded photo is included in moderated product s
     return route.fulfill({json:{products:[],previewProducts:[],total:0}});
   });
   await page.goto(`/studio/products?shop=${id}`);await page.getByRole("button",{name:"Adaugă o piesă"}).click();
+  for (const select of await page.locator("select").all()) {
+    await expect(select).toHaveCSS("appearance", "none");
+    await expect(select).toHaveCSS("padding-right", "42px");
+    await expect(select).toHaveCSS("border-radius", "8px");
+  }
   await page.getByLabel("Nume",{exact:true}).fill("Cană de test UI");await page.getByLabel("Tip produs",{exact:true}).fill("Cană");
   await page.getByLabel("Material",{exact:true}).fill("ceramică");await page.getByLabel("Culoare",{exact:true}).fill("albastru");
   await page.getByLabel("Descriere",{exact:true}).fill("O cană lucrată manual pentru verificarea fluxului de publicare.");
