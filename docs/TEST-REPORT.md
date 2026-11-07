@@ -2,7 +2,7 @@
 
 ## Cod și interfață
 
-- `npm test`: 111/111 teste unitare și de integrare PostgreSQL PGlite.
+- `npm test`: 113/113 teste unitare și de integrare PostgreSQL PGlite.
 - TypeScript strict, ESLint, build de producție și `git diff --check`: trecute.
 - Rularea integrală desktop/mobil a trecut 119 cazuri și a identificat o cursă la Undo în Studio. Aceasta a fost remediată; regresia controlează explicit un autosave întârziat și revenirea atât în previzualizare, cât și în ciorna salvată. A fost repetată de trei ori pe fiecare viewport.
 - Cele 14 regresii dedicate Admin/catalog au trecut separat. Cele opt probe Admin au trecut și pe buildul de producție; cele două probe de indisponibilitate a căutării au trecut pe serverul QA izolat.
@@ -22,9 +22,11 @@ Scena 3D a afișat toate cele șapte modele, fără repetări într-un ciclu, î
 
 ## Recenzii pe produs
 
-Secțiunea de recenzii și comentarii apare inclusiv pe produsele fără evaluări. Cumpărătorul autentificat poate trimite 1–5 stele și un comentariu după livrarea unei comenzi achitate. Baza de date verifică proprietatea comenzii, produsul, livrarea, duplicatele și interdicția autorecenziei. Operatorul aprobă sau respinge din `/admin/feedback`, cu motiv auditat; numai recenziile aprobate influențează media publică. API-ul public nu expune cumpărătorul, emailul sau comanda.
+Secțiunea de recenzii și comentarii apare inclusiv pe produsele fără evaluări. Politica a fost extinsă la cererea utilizatorului: un cont autentificat poate trimite o recenzie per produs fără cumpărare, cu excepția propriului atelier. Sunt păstrate moderarea, validarea stelelor/comentariului și protecția împotriva duplicatelor. Achiziția verificată este marcată separat și necesită comandă achitată și livrată; nu poate fi declarată de client. Catalogul arată cinci stele, medie și număr real, inclusiv zero. API-ul public nu expune cumpărătorul, emailul sau comanda.
 
-Cele 12 probe browser desktop/mobil verifică afișarea, autentificarea cu revenire la produs, formularul, păstrarea textului la eroare, moderarea, paginarea, escaparea HTML și stările fără eligibilitate. Probele de formular și operator sunt marcate MOCK, fără recenzii fabricate în baza publică. O citire autentificată reală a confirmat eligibilitatea fără erori; contul QA nu avea comenzi eligibile. Această probă a identificat și corectat relația FK indirectă prin `marketplace_order_finance` și serializarea JSONB în filtrul `items`; ambele au regresie dedicată cu SDK-ul Supabase.
+Migrarea `202611070002_open_product_reviews.sql` a fost aplicată în ae_proj după aprobarea exactă și backup privat verificat (zero recenzii existente, 721 produse). Nu s-au șters date. Testele SQL verifică trimiterea fără cumpărare, eticheta de verificare, duplicatele, autorecenziile și actualizarea ratingului exclusiv după moderare. Testul vizual verifică și fracțiunile de stea fără a inventa ratinguri când numărul este zero.
+
+Cele 14 probe browser desktop/mobil verifică afișarea, autentificarea cu revenire la produs, formularul fără cumpărare, păstrarea textului la eroare, moderarea, paginarea, escaparea HTML, diferențierea achiziției verificate și stelele din catalog. Probele de formular și operator sunt marcate MOCK, fără recenzii fabricate în baza publică. O citire autentificată reală a confirmat accesul fără erori și fără o comandă eligibilă. Verificarea achiziției folosește relația FK indirectă prin `marketplace_order_finance` și serializarea JSONB în filtrul `items`; ambele au regresie dedicată cu SDK-ul Supabase.
 
 ## Căutare reală
 

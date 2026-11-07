@@ -31,7 +31,7 @@ Testele de browser marchează explicit transporturile simulate cu MOCK. Fluxul `
 - Ateliere independente, editor de pagină, fotografii proprii, produse și moderare.
 - Plată găzduită, rezervare atomică a stocului, webhook-uri semnate și notificări cu outbox.
 - Încasări prin conturi conectate de test, comision de 5,5% din produse și plăți separate per atelier.
-- Comenzi, pregătire, curier/urmărire introduse de vânzător, retururi și recenzii după livrare.
+- Comenzi, pregătire, curier/urmărire introduse de vânzător și retururi. Recenzii moderate pentru utilizatori autentificați, cu marcarea separată a achizițiilor verificate și ratinguri în catalog.
 - Administrare, jurnal, contact, termeni și confidențialitate.
 - Șapte obiecte 3D locale, alternare aleatorie, control tactil/tastatură și mișcare redusă.
 

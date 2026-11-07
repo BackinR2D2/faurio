@@ -29,7 +29,7 @@ Fee snapshots persistă în DB; creatorii au acces doar la propriile comenzi. Op
 
 - Descoperire: Groq extrage intenția, PostgreSQL filtrează și ordonează întregul catalog publicat înainte de paginare. Cerințele precise nu sunt înlocuite cu obiecte ieftine fără legătură.
 - Identitate: teme, tipografie, poveste, secțiuni reordonabile, versiuni și fotografii proprii optimizate în Storage, fără HTML/JS arbitrar.
-- Încredere: membership/RLS, moderare auditată, recenzii numai pentru cumpărători din comenzi achitate și marcate livrate, urmate de moderare. Recenziile aprobate sunt singura sursă pentru ratingurile reale.
+- Încredere: membership/RLS și moderare auditată. Utilizatorii autentificați pot lăsa o recenzie per produs; numai cumpărătorii cu o comandă achitată și livrată primesc eticheta de achiziție verificată. Autorecenziile sunt interzise. Numai recenziile aprobate contribuie la ratingurile publice.
 - Operațiuni: Stripe găzduit, Connect, rezervare atomică, comisioane explicite, order tracking, retururi persistente și confirmare email după plată. Cererea de retur nu promite automat bani înapoi.
 - Performanță: paginare server-side, imagini optimizate, cache/cote AI și homepage cu poster utilizabil fără WebGL. Latența externă AI se măsoară separat; ținta de două secunde din studii nu este promisă pentru fiecare apel.
 

@@ -12,7 +12,7 @@ Căutarea folosește interpretare Groq într-o schemă JSON strictă și filtrar
 
 ## Funcțiile magazinului
 
-Navigare, categorii, filtre, paginare, pagină produs, stoc, coș actualizabil, promoții, cont confirmat, profil, favorite și istoric de comenzi. Plata găzduită rezervă stocul tranzacțional și confirmă comanda prin webhook semnat, idempotent. Cumpărătorul poate vedea pregătirea și urmărirea coletului, solicita retur și trimite recenzie după livrare. Numai recenziile aprobate de la cumpărători verificați generează ratinguri publice.
+Navigare, categorii, filtre, paginare, pagină produs, stoc, coș actualizabil, promoții, cont confirmat, profil, favorite și istoric de comenzi. Plata găzduită rezervă stocul tranzacțional și confirmă comanda prin webhook semnat, idempotent. Cumpărătorul poate vedea pregătirea și urmărirea coletului și solicita retur. Orice utilizator autentificat poate trimite o recenzie per produs, fără să cumpere; produsele propriului atelier sunt excluse. Numai recenziile aprobate generează ratinguri publice. Eticheta de achiziție verificată este rezervată comenzilor achitate și livrate. Catalogul arată cinci stele, media și numărul real de recenzii, inclusiv starea cu zero recenzii.
 
 Creatorul aplică pentru atelier, iar operatorul îl verifică în `/admin/marketplace`. După aprobare, creatorul personalizează pagina și trimite produse spre moderare. Titularul configurează personal contul de încasări TEST în `/studio/payments`. Comisionul platformei este de 5,5% din valoarea produselor după reduceri, fără comision pe transport; detaliile sunt în termeni. Coșul cu mai multe ateliere se achită separat per atelier.
 

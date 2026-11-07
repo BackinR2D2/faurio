@@ -3,10 +3,22 @@ import assert from "node:assert/strict";
 import { reviewSubmissionSchema, safeAccountDestination } from "../../lib/reviews.ts";
 import { createClient } from "@supabase/supabase-js";
 import { eligibleReviewOrders } from "../../lib/review-queries.ts";
+import { createElement } from "react";
+import { renderToStaticMarkup } from "react-dom/server";
+import { ProductRating } from "../../components/product-rating.tsx";
 
 const submission = { code: "FAU-TEST", productId: "cana-luna-001", rating: 5, body: "O cană foarte frumoasă." };
-test("reviews require a real order identifier, whole stars and a bounded nonempty comment", () => {
+test("catalog stars show real counts, half stars and an honest empty rating",()=>{
+  const populated=renderToStaticMarkup(createElement(ProductRating,{rating:4.5,count:2}));
+  assert.match(populated,/4,5 din 5 stele, 2 recenzii/);
+  assert.match(populated,/width:50%/);
+  assert.match(populated,/\(2\)/);
+  const empty=renderToStaticMarkup(createElement(ProductRating,{rating:4.9,count:0}));
+  assert.match(empty,/0 recenzii/);assert.doesNotMatch(empty,/4,9/);
+});
+test("reviews accept an authenticated opinion without an order, whole stars and a bounded nonempty comment", () => {
   assert.equal(reviewSubmissionSchema.safeParse(submission).success, true);
+  assert.equal(reviewSubmissionSchema.safeParse({productId:submission.productId,rating:4,body:submission.body}).success,true);
   assert.equal(reviewSubmissionSchema.parse({ ...submission, body: "  Foarte bine.  " }).body, "Foarte bine.");
   for (const patch of [{ rating: 0 }, { rating: 6 }, { rating: 4.5 }, { rating: "5" }, { code: "" }, { productId: "" }, { body: "     " }, { body: "abcd" }, { body: "a".repeat(2001) }, { status: "approved" }, { buyerId: "another-user" }]) {
     assert.equal(reviewSubmissionSchema.safeParse({ ...submission, ...patch }).success, false, JSON.stringify(patch));

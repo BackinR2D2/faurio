@@ -14,7 +14,7 @@ test("public products expose reviews without exposing buyer identity or private 
   expect(response.status()).toBe(200);
   const body = await response.json();
   expect(body.available).toBe(true);
-  for (const review of body.reviews) expect(Object.keys(review).sort()).toEqual(["body", "created_at", "id", "rating"]);
+  for (const review of body.reviews) expect(Object.keys(review).sort()).toEqual(["body", "created_at", "id", "rating", "verified_purchase"]);
   expect((await request.get("/api/reviews?productId=cana-luna-001&mode=eligibility")).status()).toBe(401);
 });
 test("decimal manual prices render and respect both budget bounds without a query", async ({ page }) => {

@@ -11,6 +11,15 @@ async function signInFixture(page: Page) {
   await page.route("**/api/shop-state", route => route.fulfill({ json: { cart: [], favorites: [] } }));
 }
 test.beforeEach(() => test.skip(!process.env.SUPABASE_SERVICE_ROLE_KEY, "Uses a real catalog product; only stated browser transports are mocked."));
+test("catalog always exposes five stars and the review count linked to the product",async({page})=>{
+  await page.goto('/catalog');
+  const link=page.locator('.product-rating-link').first();
+  await expect(link.locator('.product-rating-star')).toHaveCount(5);
+  await expect(link).toContainText(/0 recenzii|\(\d+\)/);
+  await expect(link).toHaveAttribute('href',/\/produs\/[^/]+#recenzii$/);
+  await link.click();
+  await expect(page.getByRole('heading',{name:'Recenzii și comentarii'})).toBeVisible();
+});
 
 test("every real product exposes its review section and anonymous visitors return there after sign-in", async ({ page, request }) => {
   const errors: string[] = [];
@@ -34,9 +43,9 @@ test("MOCK eligible buyer selects stars, comments, retries a rejected submission
   await signInFixture(page);
   let calls = 0;
   await page.route("**/api/reviews**", route => {
-    if (route.request().method() === "GET") return route.fulfill({ json: { orders: [{ code: "FAU-UI-REVIEW", createdAt: "2026-11-01T10:00:00Z" }], hasReview: false, ownProduct: false } });
+    if (route.request().method() === "GET") return route.fulfill({ json: { verifiedPurchase: false, hasReview: false, ownProduct: false } });
     const body = route.request().postDataJSON();
-    expect(body).toEqual({ code: "FAU-UI-REVIEW", productId, rating: 4, body: "Finisaj frumos, ambalare atentă și un produs bine realizat." });
+    expect(body).toEqual({ productId, rating: 4, body: "Finisaj frumos, ambalare atentă și un produs bine realizat." });
     calls++;
     return calls === 1 ? route.fulfill({ status: 503, json: { error: "Trimitere indisponibilă momentan." } }) : route.fulfill({ status: 201, json: { submitted: true, moderationRequired: true } });
   });
@@ -80,17 +89,20 @@ test("MOCK published reviews paginate, escape HTML and retain content on a faile
   await expect(page.locator(".feedback-review")).toContainText("pagina a doua");
 });
 
-test("MOCK no purchase, own product and pending-review states never offer an unverified form", async ({ page }) => {
+test("MOCK opinions need no purchase, while own-product and duplicate reviews are blocked", async ({ page }) => {
   await signInFixture(page);
-  let state = { orders: [], hasReview: false, ownProduct: false };
+  let state = { verifiedPurchase: false, hasReview: false, ownProduct: false };
   await page.route("**/api/reviews**", route => route.fulfill({ json: state }));
   await page.goto(`${productPath}#recenzii`);
-  await expect(page.locator(".feedback-compose")).toContainText("după livrarea unei comenzi achitate");
-  await expect(page.locator(".feedback-form")).toHaveCount(0);
-  state = { orders: [], hasReview: true, ownProduct: false };
+  await expect(page.locator(".feedback-form")).toBeVisible();
+  await expect(page.locator(".feedback-form")).not.toContainText("Achiziție verificată");
+  state = { verifiedPurchase: true, hasReview: false, ownProduct: false };
+  await page.reload();
+  await expect(page.locator(".feedback-form")).toContainText("Achiziție verificată");
+  state = { verifiedPurchase: false, hasReview: true, ownProduct: false };
   await page.reload();
   await expect(page.locator(".feedback-compose")).toContainText("Ai trimis deja o recenzie");
-  state = { orders: [], hasReview: false, ownProduct: true };
+  state = { verifiedPurchase: false, hasReview: false, ownProduct: true };
   await page.reload();
   await expect(page.locator(".feedback-compose")).toContainText("propriului atelier");
   await expect(page.locator(".feedback-form")).toHaveCount(0);
@@ -98,7 +110,7 @@ test("MOCK no purchase, own product and pending-review states never offer an unv
 
 test("MOCK existing authenticated session returns from sign-in to the exact product review section", async ({ page }) => {
   await signInFixture(page);
-  await page.route("**/api/reviews**", route => route.fulfill({ json: { orders: [], hasReview: false, ownProduct: false } }));
+  await page.route("**/api/reviews**", route => route.fulfill({ json: { verifiedPurchase: false, hasReview: false, ownProduct: false } }));
   await page.goto(`/cont?next=${encodeURIComponent(`${productPath}#recenzii`)}`);
   await expect(page).toHaveURL(url => url.pathname === productPath && url.hash === "#recenzii");
   await expect(page.getByRole("heading", { name: "Recenzii și comentarii" })).toBeVisible();

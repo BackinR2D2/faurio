@@ -21,20 +21,22 @@ export const GET = api(async request => {
   ]);
   databaseError(membership.error); databaseError(existing.error);
   const ownProduct = Boolean(membership.data?.length);
-  if (ownProduct) return Response.json({ orders: [], hasReview: Boolean(existing.data?.length), ownProduct } satisfies ReviewEligibility);
+  if (ownProduct) return Response.json({ hasReview: Boolean(existing.data?.length), ownProduct, verifiedPurchase: false } satisfies ReviewEligibility);
   const reviewedCodes = (existing.data || []).map(review => review.order_code);
   const { data, error } = await eligibleReviewOrders(db, auth.user.id, productId, reviewedCodes);
   databaseError(error);
-  return Response.json({ orders: (data || []).map(order => ({ code: order.code, createdAt: order.created_at })), hasReview: reviewedCodes.length > 0, ownProduct: false } satisfies ReviewEligibility);
+  return Response.json({ hasReview: reviewedCodes.length > 0, ownProduct: false, verifiedPurchase: Boolean(data?.length) } satisfies ReviewEligibility);
 });
 
 export const POST = api(async request => {
   const auth = await requireAuth(request);
   const body = await readJson(request, reviewSubmissionSchema);
-  const { error } = await auth.supabase.rpc("submit_product_review", { p_code: body.code, p_product: body.productId, p_rating: body.rating, p_body: body.body });
+  const { error } = await auth.supabase.rpc("submit_product_review", { p_code: body.code || null, p_product: body.productId, p_rating: body.rating, p_body: body.body });
   if (error?.message.includes("verified_delivery_required")) throw new ApiError(403, "VERIFIED_PURCHASE_REQUIRED", "Poți recenza produsul după livrarea unei comenzi achitate din contul tău.");
   if (error?.message.includes("self_review_forbidden")) throw new ApiError(403, "SELF_REVIEW_FORBIDDEN", "Nu poți recenza produsele propriului atelier.");
-  if (error?.code === "23505") throw new ApiError(409, "REVIEW_EXISTS", "Ai trimis deja o recenzie pentru acest produs din comandă.");
+  if (error?.code === "23505") throw new ApiError(409, "REVIEW_EXISTS", "Ai trimis deja o recenzie pentru acest produs.");
+  if (error?.message.includes("review_daily_limit")) throw new ApiError(429, "REVIEW_LIMIT", "Ai atins limita de recenzii pentru astăzi. Revino mâine.");
+  if (error?.message.includes("review_product_unavailable")) throw new ApiError(404, "PRODUCT_NOT_FOUND", "Produsul nu mai este disponibil.");
   databaseError(error);
   return Response.json({ submitted: true, moderationRequired: true }, { status: 201 });
 });

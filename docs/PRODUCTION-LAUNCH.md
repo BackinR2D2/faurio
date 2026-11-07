@@ -95,7 +95,7 @@ Sau pornește manual workflow-ul `Verify public Faurio deployment` din GitHub Ac
 
 ## 9. Încredere și suport
 
-Cont → Comenzi oferă istoric paginat, pregătire, curier și urmărire; cereri de retur/retragere persistente și recenzii după livrare. Înregistrarea returului nu promite o rambursare și nu cere motiv justificativ. Recenziile necesită achiziție a produsului și nu pot proveni din autocomenzile atelierului. `/admin/feedback` moderează recenzii/retururi și arată mesajele Contact; numai recenziile aprobate generează ratinguri publice.
+Cont → Comenzi oferă istoric paginat, pregătire, curier și urmărire, plus cereri de retur/retragere persistente. Înregistrarea returului nu promite o rambursare. Utilizatorii autentificați pot recenza orice produs public, cu excepția propriului atelier, o singură dată per produs. Achiziția verificată este marcată numai pentru comenzi achitate și livrate. `/admin/feedback` moderează recenzii/retururi și arată mesajele Contact; numai recenziile aprobate generează ratinguri publice. Aplică și `202611070002_open_product_reviews.sql` înainte de noul formular.
 
 Contact/Newsletter au validare, same-origin, body limit și cote DB comune: 200/zi per formular și 10/oră per identificator. Netlify/Vercel folosesc headerul providerului; alte medii împart limita fallback. HMAC-ul traficului se rotește zilnic, nu stochează IP-ul brut și se curăță după două zile la următoarea utilizare. Acest POC nu înlocuiește firewall/CAPTCHA/DDoS protection. Newsletterul salvează cereri de abonare, fără campanii automate. `SUPPORT_EMAIL` este afișat public doar dacă îl configurezi intenționat.
 

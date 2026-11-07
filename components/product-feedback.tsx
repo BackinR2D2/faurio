@@ -19,7 +19,6 @@ function ProductFeedbackContent({ productId, initial, authenticated, loading, ac
   const [eligibility, setEligibility] = useState<ReviewEligibility | null>(null);
   const [eligibilityError, setEligibilityError] = useState("");
   const [eligibilityRevision, setEligibilityRevision] = useState(0);
-  const [order, setOrder] = useState("");
   const [rating, setRating] = useState(0);
   const [body, setBody] = useState("");
   const [busy, setBusy] = useState(false);
@@ -32,7 +31,7 @@ function ProductFeedbackContent({ productId, initial, authenticated, loading, ac
   useEffect(() => {
     const controller = new AbortController();
     if (accessToken) void studioRequest<ReviewEligibility>(`/api/reviews?${new URLSearchParams({ productId, mode: "eligibility" })}`, accessToken, { signal: controller.signal })
-      .then(data => { if (!controller.signal.aborted) { setEligibilityError(""); setEligibility(data); setOrder(data.orders[0]?.code || ""); } })
+      .then(data => { if (!controller.signal.aborted) { setEligibilityError(""); setEligibility(data); } })
       .catch(() => { if (!controller.signal.aborted) setEligibilityError("Nu am putut verifica achizițiile tale."); });
     return () => controller.abort();
   }, [accessToken, productId, eligibilityRevision]);
@@ -50,10 +49,10 @@ function ProductFeedbackContent({ productId, initial, authenticated, loading, ac
   }
   async function submit(event: FormEvent<HTMLFormElement>) {
     event.preventDefault();
-    if (submitting.current || !accessToken || !rating || !order) return;
+    if (submitting.current || !accessToken || !rating || !eligibility || eligibility.hasReview || eligibility.ownProduct) return;
     submitting.current = true; setBusy(true); setError("");
     try {
-      await studioRequest("/api/reviews", accessToken, { method: "POST", body: JSON.stringify({ code: order, productId, rating, body: body.trim() }) });
+      await studioRequest("/api/reviews", accessToken, { method: "POST", body: JSON.stringify({ productId, rating, body: body.trim() }) });
       setSubmitted(true); setBody("");
     } catch (caught) { setError((caught as Error).message); }
     finally { submitting.current = false; setBusy(false); }
@@ -63,19 +62,19 @@ function ProductFeedbackContent({ productId, initial, authenticated, loading, ac
     <div className="feedback-layout">
       <div className="feedback-list" aria-busy={reading}>
         {!reviews.available ? <div className="feedback-empty"><MessageSquare /><h3>Recenzii indisponibile momentan</h3><button className="text-button" onClick={() => readPage(1)} disabled={reading}>Reîncearcă</button></div>
-          : reviews.total === 0 ? <div className="feedback-empty"><MessageSquare /><h3>Încă nicio recenzie</h3><p>Ai cumpărat acest produs? Spune-ne cum a fost.</p></div>
-          : <>{reviews.reviews.map(review => <article className="feedback-review" key={review.id}><div className="feedback-review-top"><span className="feedback-stars" aria-label={`${review.rating} din 5 stele`}>{[1, 2, 3, 4, 5].map(value => <Star key={value} aria-hidden="true" fill={value <= review.rating ? "currentColor" : "none"} size={16} />)}</span><time dateTime={review.created_at}>{date(review.created_at)}</time></div><p>{review.body}</p><span className="feedback-verified"><ShieldCheck size={14} /> Achiziție verificată</span></article>)}
+          : reviews.total === 0 ? <div className="feedback-empty"><MessageSquare /><h3>Încă nicio recenzie</h3><p>Fii primul care își spune părerea.</p></div>
+          : <>{reviews.reviews.map(review => <article className="feedback-review" key={review.id}><div className="feedback-review-top"><span className="feedback-stars" aria-label={`${review.rating} din 5 stele`}>{[1, 2, 3, 4, 5].map(value => <Star key={value} aria-hidden="true" fill={value <= review.rating ? "currentColor" : "none"} size={16} />)}</span><time dateTime={review.created_at}>{date(review.created_at)}</time></div><p>{review.body}</p><span className="feedback-verified">{review.verified_purchase ? <><ShieldCheck size={14} /> Achiziție verificată</> : "Utilizator înregistrat"}</span></article>)}
             {reviews.pageCount > 1 && <nav className="feedback-pagination" aria-label="Pagini recenzii"><button aria-label="Recenzii anterioare" disabled={reading || reviews.page <= 1} onClick={() => readPage(reviews.page - 1)}><ChevronLeft size={18} /></button><span>{reviews.page} / {reviews.pageCount}</span><button aria-label="Recenzii următoare" disabled={reading || reviews.page >= reviews.pageCount} onClick={() => readPage(reviews.page + 1)}><ChevronRight size={18} /></button></nav>}</>}
       </div>
       <div className="feedback-compose"><h3>Scrie o recenzie</h3>
-        {loading ? <p role="status">Se verifică sesiunea…</p> : !authenticated ? <><p>Autentifică-te pentru a evalua o achiziție livrată.</p><Link className="studio-secondary" href={`/cont?next=${encodeURIComponent(`/produs/${productId}#recenzii`)}`}>Autentifică-te</Link></>
+        {loading ? <p role="status">Se verifică sesiunea…</p> : !authenticated ? <><p>Intră în cont pentru a lăsa o recenzie.</p><Link className="studio-secondary" href={`/cont?next=${encodeURIComponent(`/produs/${productId}#recenzii`)}`}>Autentifică-te</Link></>
           : eligibilityError ? <><p role="alert">{eligibilityError}</p><button className="text-button" onClick={() => { setEligibilityError(""); setEligibility(null); setEligibilityRevision(value => value + 1); }}>Reîncearcă verificarea</button></>
           : submitted ? <p className="feedback-success" role="status"><Check size={18} /> Recenzia și comentariul au fost trimise la moderare. Mulțumim!</p>
           : !eligibility ? <p role="status">Se verifică achizițiile…</p>
           : eligibility.ownProduct ? <p>Nu poți recenza produsele propriului atelier.</p>
-          : !eligibility.orders.length ? <><p>{eligibility.hasReview ? "Ai trimis deja o recenzie. Recenziile aprobate apar aici după moderare." : "Poți evalua acest produs după livrarea unei comenzi achitate din contul tău."}</p><Link className="text-button" href="/cont/profil">Vezi comenzile tale</Link></>
+          : eligibility.hasReview ? <p>Ai trimis deja o recenzie. Recenziile aprobate apar aici după moderare.</p>
           : <form className="feedback-form" onSubmit={submit}>
-            {eligibility.orders.length > 1 && <label>Comanda livrată<select value={order} onChange={event => setOrder(event.target.value)} disabled={busy}>{eligibility.orders.map(item => <option key={item.code} value={item.code}>{date(item.createdAt)} · {item.code.slice(-8)}</option>)}</select></label>}
+            {eligibility.verifiedPurchase && <span className="feedback-verified"><ShieldCheck size={14} /> Achiziție verificată</span>}
             <fieldset disabled={busy}><legend>Evaluarea ta</legend><div className="feedback-rating-input">{[1, 2, 3, 4, 5].map(value => <label key={value} title={`${value} / 5`}><input type="radio" name={`rating-${productId}`} value={value} checked={rating === value} onChange={() => setRating(value)} required aria-label={`${value} ${value === 1 ? "stea" : "stele"}`} /><Star aria-hidden="true" fill={value <= rating ? "currentColor" : "none"} size={26} /></label>)}</div></fieldset>
             <label>Comentariul tău<textarea value={body} onChange={event => setBody(event.target.value)} minLength={5} maxLength={2000} rows={5} required disabled={busy} placeholder="Ce ți-a plăcut la produs?" /></label>
             <span className="feedback-form-note">Recenzia va fi publicată după moderare.</span><button className="primary-button" disabled={busy || rating === 0 || body.trim().length < 5}>{busy ? "Se trimite…" : "Trimite recenzia"}</button>

@@ -41,6 +41,7 @@ before(async () => {
   await db.exec(await readFile(new URL("../../supabase/migrations/202610300002_product_media.sql", import.meta.url), "utf8"));
   for (const migration of ["202610300003_order_emails.sql", "202610310001_ai_search.sql", "202610310002_connect_and_fees.sql", "202610310003_shop_media.sql", "202610310004_buyer_trust.sql", "202611010001_shop_lifecycle.sql", "202611060001_search_constraints.sql"]) await db.exec(await readFile(new URL(`../../supabase/migrations/${migration}`, import.meta.url), "utf8"));
   await db.exec(await readFile(new URL("../../supabase/migrations/202611070001_catalog_multi_filters.sql", import.meta.url), "utf8"));
+  await db.exec(await readFile(new URL("../../supabase/migrations/202611070002_open_product_reviews.sql", import.meta.url), "utf8"));
   await db.query("insert into auth.users(id,email) values($1,'a@example.test'),($2,'b@example.test'),($3,'operator@example.test')", [sellerA, sellerB, operator]);
 });
 after(async () => { await db.close(); });
@@ -312,7 +313,7 @@ test("uploaded photos cannot be stolen across shops or registered by anonymous c
   await db.exec("set role anon");try { await assert.rejects(db.query("select public.register_shop_media($1,$2,$3)",[shopA,sellerA,crypto.randomUUID()]),/permission denied/); } finally { await db.exec("reset role"); }
 });
 
-test("only delivered verified buyers can review; moderation controls ratings and return requests remain private",async()=>{
+test("order-linked reviews require delivered purchases; moderation controls ratings and return requests remain private",async()=>{
   const buyer="30000000-0000-4000-8000-000000000001";
   await db.query("insert into auth.users(id,email) values($1,'buyer@example.test')",[buyer]);
   const productId=await sqlValue<string>("select id as value from public.products where name='Vază cu încasări'");
@@ -336,7 +337,7 @@ test("only delivered verified buyers can review; moderation controls ratings and
   let reviewId="";let returnId="";
   await asUser(buyer,async()=>{
     reviewId=await sqlValue<string>("select public.submit_product_review('FAU-BUYER',$1,5,'Really lovely product') as value",[productId]);
-    await assert.rejects(db.query("select public.submit_product_review('FAU-BUYER',$1,5,'Duplicate review')",[productId]),/unique constraint/);
+    await assert.rejects(db.query("select public.submit_product_review('FAU-BUYER',$1,5,'Duplicate review')",[productId]),/review_already_exists/);
     returnId=await sqlValue<string>("select public.request_order_return('FAU-BUYER','Solicit retragerea din comandă.') as value");
     assert.equal(await sqlValue<number>("select count(*)::int as value from public.return_requests"),1);
     const progress=await sqlValue<{code:string;state:string;returnStatus:string}[]>("select public.buyer_order_progress() as value");
@@ -355,6 +356,30 @@ test("only delivered verified buyers can review; moderation controls ratings and
   await db.query("select public.moderate_buyer_feedback($1,'returns',$2,'reviewing','Solicitarea este în analiză.')",[operator,returnId]);
   assert.equal(await sqlValue<string>("select status as value from public.orders where code='FAU-BUYER'"),"paid");
   await db.exec("set role anon");try{await assert.rejects(db.exec("select * from public.product_reviews"),/permission denied/);assert.equal(await sqlValue<number>("select count(*)::int as value from public.public_product_reviews"),1);}finally{await db.exec("reset role");}
+});
+
+test("registered users can review without buying, with honest verification, one opinion per product and moderation",async()=>{
+  const reviewer="30000000-0000-4000-8000-000000000002";
+  await db.query("insert into auth.users(id,email) values($1,'reviewer@example.test')",[reviewer]);
+  const productId=await sqlValue<string>("select id as value from public.products where name='Vază cu încasări'");
+  await db.exec("set role anon");
+  try { await assert.rejects(db.query("select public.submit_product_review(null,$1,4,'Părerea mea despre produs')",[productId]),/permission denied/); } finally { await db.exec("reset role"); }
+  await asUser(sellerA,()=>assert.rejects(db.query("select public.submit_product_review(null,$1,4,'Propriul meu produs')",[productId]),/self_review_forbidden/));
+  await asUser(reviewer,()=>assert.rejects(db.query("select public.submit_product_review(null,'missing-product',4,'Produs inexistent')"),/review_product_unavailable/));
+  let id="";
+  await asUser(reviewer,async()=>{
+    id=await sqlValue<string>("select public.submit_product_review(null,$1,4,'Îmi place forma acestui obiect.') as value",[productId]);
+    await assert.rejects(db.query("select public.submit_product_review(null,$1,5,'O a doua recenzie')",[productId]),/review_already_exists/);
+    assert.equal(await sqlValue<boolean>("select verified_purchase as value from public.product_reviews where id=$1",[id]),false);
+    assert.equal(await sqlValue<string|null>("select order_code as value from public.product_reviews where id=$1",[id]),null);
+  });
+  assert.equal(await sqlValue<number>("select reviews as value from public.products where id=$1",[productId]),1);
+  await db.query("select public.moderate_buyer_feedback($1,'reviews',$2,'approved','Comentariu relevant, fără achiziție verificată')",[operator,id]);
+  assert.equal(await sqlValue<number>("select reviews as value from public.products where id=$1",[productId]),2);
+  assert.equal(Number(await sqlValue<number>("select rating as value from public.products where id=$1",[productId])),4.5);
+  assert.equal(await sqlValue<boolean>("select verified_purchase as value from public.public_product_reviews where id=$1",[id]),false);
+  await db.query("select public.moderate_buyer_feedback($1,'reviews',$2,'rejected','Recenzia nu respectă regulile publicării')",[operator,id]);
+  assert.equal(await sqlValue<number>("select reviews as value from public.products where id=$1",[productId]),1);
 });
 
 test("stale SMTP leases become uncertain instead of being sent again",async()=>{

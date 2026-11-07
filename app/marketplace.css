@@ -321,6 +321,14 @@ h1, h2, h3 { overflow-wrap: break-word; }
 .customer-order-actions form { display: grid; gap: 12px; margin-top: 14px; }
 .customer-order-actions textarea,.customer-order-actions select,.seller-order textarea { width: 100%; padding: 12px; border: 1px solid var(--line); border-radius: 10px; background: var(--paper); color: var(--ink); font: inherit; resize: vertical; }
 .product-feedback { margin-top: clamp(48px,7vw,90px); padding-top: 32px; border-top: 1px solid var(--line); scroll-margin-top: 100px; }
+.product-rating-link { display: inline-flex; align-items: center; min-height: 44px; width: fit-content; border-radius: 4px; }
+.product-rating-summary { display: inline-flex; align-items: center; flex-wrap: wrap; gap: 7px; color: var(--ink-soft); font-size: 12px; line-height: 1.6; }
+.product-rating-summary strong { color: var(--ink); font-weight: 650; }
+.product-rating-stars { display: inline-flex; gap: 2px; color: var(--cyan); }
+.product-rating-star { position: relative; display: inline-block; width: 14px; height: 14px; }
+.product-rating-star > svg { display: block; opacity: .45; }
+.product-rating-star > span { position: absolute; inset: 0 auto 0 0; overflow: hidden; }
+.product-rating-star > span > svg { display: block; max-width: none; }
 .feedback-heading { display: flex; justify-content: space-between; align-items: start; gap: 24px; margin-bottom: 28px; }
 .feedback-heading h2 { margin: 0; font-size: clamp(30px,3.5vw,44px); line-height: 1.25; }
 .feedback-heading p { margin: 10px 0 0; color: var(--ink-soft); font-size: 14px; }
