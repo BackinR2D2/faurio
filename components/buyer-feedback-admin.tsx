@@ -1,15 +1,203 @@
 "use client";
 import Link from "next/link";
-import {useEffect,useState} from "react";
-import {useAuth} from "@/components/auth-provider";
-import {studioRequest} from "@/lib/marketplace/client";
-type Feedback={id:string;order_code:string|null;product_id?:string;verified_purchase?:boolean;rating?:number;body?:string;message?:string;status:string;name?:string;email?:string;subject?:string};
-export function BuyerFeedbackAdmin(){
-  const {accessToken,loading}=useAuth();const [kind,setKind]=useState<"reviews"|"returns"|"contacts">("reviews");const [records,setRecords]=useState<Feedback[]>([]);const [page,setPage]=useState(1);const [total,setTotal]=useState(0);const [error,setError]=useState("");const [busy,setBusy]=useState(false);const [revision,setRevision]=useState(0);
-  useEffect(()=>{if(!accessToken)return;const controller=new AbortController();studioRequest<{records:Feedback[];total:number}>(`/api/admin/feedback?kind=${kind}&page=${page}`,accessToken,{signal:controller.signal}).then(result=>{if(controller.signal.aborted)return;setRecords(result.records);setTotal(result.total);setError("");}).catch(caught=>{if(!controller.signal.aborted)setError((caught as Error).message);});return()=>controller.abort();},[accessToken,kind,page,revision]);
-  if(loading)return <main className="page-main" role="status">Se verifică accesul…</main>;
-  if(!accessToken)return <main className="page-main"><h1>Acces operator.</h1><Link href="/cont?next=/admin/feedback">Autentifică-te</Link></main>;
-  return <main className="page-main"><header className="studio-heading"><h1>Recenzii și mesaje</h1><p>Verifică recenziile înainte de publicare. Rezolvarea unui retur nu inițiază automat rambursarea.</p><Link href="/admin/finance">Comisioane & rambursări →</Link></header><div className="studio-tabs">{(["reviews","returns","contacts"] as const).map(value=><button key={value} aria-pressed={kind===value} onClick={()=>{setKind(value);setPage(1);setRecords([]);}}>{value==="reviews"?"Recenzii":value==="returns"?"Retururi":"Mesaje de contact"}</button>)}</div>{error&&<p className="form-error" role="alert">{error}</p>}
-    <div className="seller-orders">{records.map(record=><article className="seller-order" key={record.id}><h2>{record.order_code||record.subject||"Mesaj"}</h2><p>{record.status}{record.rating&&<> · {record.rating}/5</>}</p>{record.product_id&&<Link className="text-button" href={`/produs/${encodeURIComponent(record.product_id)}`}>Vezi produsul →</Link>}{record.name&&<p>{record.name} · {record.email}</p>}<p>{record.body||record.message}</p>{kind!=="contacts"&&<form onSubmit={async(event)=>{event.preventDefault();const form=new FormData(event.currentTarget);setBusy(true);setError("");try{await studioRequest("/api/admin/feedback",accessToken,{method:"PATCH",body:JSON.stringify({kind,id:record.id,status:form.get("status"),reason:form.get("reason")})});setRevision(value=>value+1);}catch(caught){setError((caught as Error).message);}finally{setBusy(false);}}}><label>Decizie<select name="status">{(kind==="reviews"?[["approved","Publică"],["rejected","Respinge"]]:[["reviewing","În analiză"],["resolved","Rezolvată"],["rejected","Respinsă justificat"]]).map(([value,label])=><option key={value} value={value}>{label}</option>)}</select></label><label>Motiv / răspuns pentru cumpărător<textarea name="reason" minLength={5} maxLength={1000} required /></label><button className="studio-secondary" disabled={busy}>Salvează decizia</button></form>}</article>)}</div>{!records.length&&!error&&<p className="studio-empty-inline">Nicio înregistrare pe această pagină.</p>}{total>20&&<nav className="maker-page-links"><button disabled={page===1} onClick={()=>setPage(page-1)}>Înapoi</button><span>{page} / {Math.ceil(total/20)}</span><button disabled={page*20>=total} onClick={()=>setPage(page+1)}>Înainte</button></nav>}
-  </main>;
+import { useEffect, useState } from "react";
+import { useAuth } from "@/components/auth-provider";
+import { studioRequest } from "@/lib/marketplace/client";
+type Feedback = {
+  id: string;
+  order_code: string | null;
+  product_id?: string;
+  verified_purchase?: boolean;
+  rating?: number;
+  body?: string;
+  message?: string;
+  status: string;
+  name?: string;
+  email?: string;
+  subject?: string;
+};
+export function BuyerFeedbackAdmin() {
+  const { accessToken, loading } = useAuth();
+  const [kind, setKind] = useState<"reviews" | "returns" | "contacts">(
+    "reviews"
+  );
+  const [records, setRecords] = useState<Feedback[]>([]);
+  const [page, setPage] = useState(1);
+  const [total, setTotal] = useState(0);
+  const [error, setError] = useState("");
+  const [busy, setBusy] = useState(false);
+  const [revision, setRevision] = useState(0);
+  useEffect(() => {
+    if (!accessToken) return;
+    const controller = new AbortController();
+    studioRequest<{ records: Feedback[]; total: number }>(
+      `/api/admin/feedback?kind=${kind}&page=${page}`,
+      accessToken,
+      { signal: controller.signal }
+    )
+      .then((result) => {
+        if (controller.signal.aborted) return;
+        setRecords(result.records);
+        setTotal(result.total);
+        setError("");
+      })
+      .catch((caught) => {
+        if (!controller.signal.aborted) setError((caught as Error).message);
+      });
+    return () => controller.abort();
+  }, [accessToken, kind, page, revision]);
+  if (loading)
+    return (
+      <main className="page-main" role="status" style={{ padding: "1rem" }}>
+        Se verifică accesul…
+      </main>
+    );
+  if (!accessToken)
+    return (
+      <main className="page-main" style={{ padding: "1rem" }}>
+        <h1>Acces operator.</h1>
+        <Link href="/cont?next=/admin/feedback">Autentifică-te</Link>
+      </main>
+    );
+  return (
+    <main className="page-main" style={{ padding: "1rem" }}>
+      <header className="studio-heading">
+        <h1 style={{ marginTop: 0 }}>Recenzii și mesaje</h1>
+        <p>
+          Verifică recenziile înainte de publicare. Rezolvarea unui retur nu
+          inițiază automat rambursarea.
+        </p>
+        <Link href="/admin/finance">Comisioane & rambursări →</Link>
+      </header>
+      <div className="studio-tabs">
+        {(["reviews", "returns", "contacts"] as const).map((value) => (
+          <button
+            key={value}
+            aria-pressed={kind === value}
+            onClick={() => {
+              setKind(value);
+              setPage(1);
+              setRecords([]);
+            }}
+          >
+            {value === "reviews"
+              ? "Recenzii"
+              : value === "returns"
+              ? "Retururi"
+              : "Mesaje de contact"}
+          </button>
+        ))}
+      </div>
+      {error && (
+        <p className="form-error" role="alert">
+          {error}
+        </p>
+      )}
+      <div className="seller-orders">
+        {records.map((record) => (
+          <article className="seller-order" key={record.id}>
+            <h2>{record.order_code || record.subject || "Mesaj"}</h2>
+            <p>
+              {record.status}
+              {record.rating && <> · {record.rating}/5</>}
+            </p>
+            {record.product_id && (
+              <Link
+                className="text-button"
+                href={`/produs/${encodeURIComponent(record.product_id)}`}
+              >
+                Vezi produsul →
+              </Link>
+            )}
+            {record.name && (
+              <p>
+                {record.name} · {record.email}
+              </p>
+            )}
+            <p>{record.body || record.message}</p>
+            {kind !== "contacts" && (
+              <form
+                onSubmit={async (event) => {
+                  event.preventDefault();
+                  const form = new FormData(event.currentTarget);
+                  setBusy(true);
+                  setError("");
+                  try {
+                    await studioRequest("/api/admin/feedback", accessToken, {
+                      method: "PATCH",
+                      body: JSON.stringify({
+                        kind,
+                        id: record.id,
+                        status: form.get("status"),
+                        reason: form.get("reason"),
+                      }),
+                    });
+                    setRevision((value) => value + 1);
+                  } catch (caught) {
+                    setError((caught as Error).message);
+                  } finally {
+                    setBusy(false);
+                  }
+                }}
+              >
+                <label>
+                  Decizie
+                  <select name="status">
+                    {(kind === "reviews"
+                      ? [
+                          ["approved", "Publică"],
+                          ["rejected", "Respinge"],
+                        ]
+                      : [
+                          ["reviewing", "În analiză"],
+                          ["resolved", "Rezolvată"],
+                          ["rejected", "Respinsă justificat"],
+                        ]
+                    ).map(([value, label]) => (
+                      <option key={value} value={value}>
+                        {label}
+                      </option>
+                    ))}
+                  </select>
+                </label>
+                <label>
+                  Motiv / răspuns pentru cumpărător
+                  <textarea
+                    name="reason"
+                    minLength={5}
+                    maxLength={1000}
+                    required
+                  />
+                </label>
+                <button className="studio-secondary" disabled={busy}>
+                  Salvează decizia
+                </button>
+              </form>
+            )}
+          </article>
+        ))}
+      </div>
+      {!records.length && !error && (
+        <p className="studio-empty-inline">
+          Nicio înregistrare pe această pagină.
+        </p>
+      )}
+      {total > 20 && (
+        <nav className="maker-page-links">
+          <button disabled={page === 1} onClick={() => setPage(page - 1)}>
+            Înapoi
+          </button>
+          <span>
+            {page} / {Math.ceil(total / 20)}
+          </span>
+          <button
+            disabled={page * 20 >= total}
+            onClick={() => setPage(page + 1)}
+          >
+            Înainte
+          </button>
+        </nav>
+      )}
+    </main>
+  );
 }

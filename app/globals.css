@@ -123,6 +123,13 @@ h1, h2, h3 { font-family: "Oswald Variable", Oswald, Impact, sans-serif; font-we
 .category-row .mobile-filter { display: none; margin-left: auto; }
 .catalog-body { display: grid; grid-template-columns: 210px 1fr; gap: clamp(35px,5vw,72px); }
 .filter-panel { display: flex; flex-direction: column; gap: 27px; }
+.filter-panel {
+  -ms-overflow-style: none;  /* Internet Explorer 10+ */
+  scrollbar-width: none;  /* Firefox, Safari 18.2+, Chromium 121+ */
+}
+.filter-panel::-webkit-scrollbar { 
+  display: none;  /* Older Safari and Chromium */
+}
 .filter-heading { display: flex; align-items: center; justify-content: space-between; border-bottom: 1px solid var(--line); padding-bottom: 14px; }
 .filter-heading strong { font-family: "Oswald Variable", sans-serif; font-size: 18px; }
 .filter-heading button { display: none; border: 0; background: transparent; }
