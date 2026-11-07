@@ -353,7 +353,10 @@ h1, h2, h3 { overflow-wrap: break-word; }
 .feedback-empty > svg { color: var(--cyan); margin-bottom: 16px; }
 .feedback-review { padding: 24px 0; border-bottom: 1px solid var(--line); }
 .feedback-review:first-child { padding-top: 0; }
-.feedback-review-top { display: flex; justify-content: space-between; gap: 12px; flex-wrap: wrap; }
+.feedback-review-top { display: flex; justify-content: space-between; align-items: center; gap: 12px; flex-wrap: wrap; margin-bottom: 12px; }
+.feedback-author { display: flex; align-items: center; gap: 12px; min-width: 0; flex: 1; }
+.feedback-author strong { font-size: 14px; line-height: 1.5; overflow-wrap: anywhere; min-width: 0; }
+.feedback-avatar { display: grid; place-items: center; flex: 0 0 40px; width: 40px; height: 40px; border-radius: 50%; background: var(--ink); color: var(--sand, #e2dbbe); font-size: 13px; font-weight: 600; }
 .feedback-review time, .feedback-verified { font-size: 11px; color: var(--ink-soft); line-height: 1.6; }
 .feedback-review > p { white-space: pre-wrap; overflow-wrap: anywhere; margin: 16px 0; font-size: 14px; line-height: 1.8; }
 .feedback-form { display: grid; gap: 18px; }

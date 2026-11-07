@@ -109,12 +109,15 @@ test("MOCK published reviews paginate, escape HTML and retain content on a faile
   await page.route("**/api/reviews**", route => {
     if (fail) return route.fulfill({ status: 503, json: { error: "Unavailable" } });
     const second = new URL(route.request().url()).searchParams.get("page") === "2";
-    return route.fulfill({ json: { reviews: [{ id: second ? "second" : "first", rating: 5, body: second ? "Comentariu de pe pagina a doua." : '<img src=x onerror="alert(1)"> Text afișat literal.', created_at: "2026-11-07T10:00:00Z" }], total: 11, rating: 4.8, page: second ? 2 : 1, pageCount: 2, available: true } });
+    return route.fulfill({ json: { reviews: [{ id: second ? "second" : "first", rating: 5, author: {name:"Andreea Popescu",initials:"AP"}, verified_purchase: false, body: second ? "Comentariu de pe pagina a doua." : '<img src=x onerror="alert(1)"> Text afișat literal.', created_at: "2026-11-07T10:00:00Z" }], total: 11, rating: 4.8, page: second ? 2 : 1, pageCount: 2, available: true } });
   });
   await page.goto(`${productPath}#recenzii`);
   await page.getByRole("button", { name: "Actualizează recenziile" }).click();
   await expect(page.locator(".feedback-review")).toContainText('<img src=x onerror="alert(1)">');
   await expect(page.locator(".feedback-review img")).toHaveCount(0);
+  await expect(page.locator(".feedback-author")).toHaveText("APAndreea Popescu");
+  await expect(page.getByRole("img",{name:"Avatar Andreea Popescu",exact:true})).toHaveText("AP");
+  await expect(page.locator(".feedback-review")).not.toContainText("Utilizator înregistrat");
   await expect(page.locator(".feedback-score")).toContainText("4,8");
   await page.getByRole("button", { name: "Recenzii următoare" }).click();
   await expect(page.locator(".feedback-review")).toContainText("pagina a doua");

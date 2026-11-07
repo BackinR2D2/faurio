@@ -1,10 +1,11 @@
 import { z } from "zod";
+import type { ReviewAuthor } from "./review-authors";
 
 export const reviewSubmissionSchema = z.object({
   code: z.string().trim().min(1).max(100).optional(), productId: z.string().trim().min(1).max(200),
   rating: z.number().int().min(1).max(5), body: z.string().trim().min(5, "Scrie cel puțin 5 caractere.").max(2000),
 }).strict();
-export type PublicReview = { id: string; rating: number; body: string; created_at: string; verified_purchase: boolean };
+export type PublicReview = { id: string; rating: number; body: string; created_at: string; verified_purchase: boolean; author: ReviewAuthor };
 export type ReviewPage = { reviews: PublicReview[]; total: number; rating: number; page: number; pageCount: number; available: boolean };
 export const reviewDeletionSchema = z.object({ id: z.uuid() }).strict();
 export type OwnReview = { id: string; rating: number; body: string; status: "pending" | "approved" | "rejected"; created_at: string };

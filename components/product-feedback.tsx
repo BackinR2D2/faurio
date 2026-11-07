@@ -7,6 +7,7 @@ import { Check, ChevronLeft, ChevronRight, MessageSquare, RotateCw, ShieldCheck,
 import { useAuth } from "@/components/auth-provider";
 import { studioRequest } from "@/lib/marketplace/client";
 import type { ReviewEligibility, ReviewPage } from "@/lib/reviews";
+import { ReviewAuthor } from "@/components/review-author";
 
 const date = (value: string) => new Intl.DateTimeFormat("ro-RO", { day: "numeric", month: "long", year: "numeric", timeZone: "Europe/Bucharest" }).format(new Date(value));
 
@@ -78,7 +79,7 @@ function ProductFeedbackContent({ productId, initial, authenticated, loading, ac
       <div className="feedback-list" aria-busy={reading}>
         {!reviews.available ? <div className="feedback-empty"><MessageSquare /><h3>Recenzii indisponibile momentan</h3><button className="text-button" onClick={() => readPage(1)} disabled={reading}>Reîncearcă</button></div>
           : reviews.total === 0 ? <div className="feedback-empty"><MessageSquare /><h3>Încă nicio recenzie</h3><p>Fii primul care își spune părerea.</p></div>
-          : <>{reviews.reviews.map(review => <article className="feedback-review" key={review.id}><div className="feedback-review-top"><span className="feedback-stars" aria-label={`${review.rating} din 5 stele`}>{[1, 2, 3, 4, 5].map(value => <Star key={value} aria-hidden="true" fill={value <= review.rating ? "currentColor" : "none"} size={16} />)}</span><time dateTime={review.created_at}>{date(review.created_at)}</time></div><p>{review.body}</p><span className="feedback-verified">{review.verified_purchase ? <><ShieldCheck size={14} /> Achiziție verificată</> : "Utilizator înregistrat"}</span></article>)}
+          : <>{reviews.reviews.map(review => <article className="feedback-review" key={review.id}><div className="feedback-review-top"><ReviewAuthor author={review.author} /><time dateTime={review.created_at}>{date(review.created_at)}</time></div><span className="feedback-stars" aria-label={`${review.rating} din 5 stele`}>{[1, 2, 3, 4, 5].map(value => <Star key={value} aria-hidden="true" fill={value <= review.rating ? "currentColor" : "none"} size={16} />)}</span><p>{review.body}</p>{review.verified_purchase && <span className="feedback-verified"><ShieldCheck size={14} /> Achiziție verificată</span>}</article>)}
             {reviews.pageCount > 1 && <nav className="feedback-pagination" aria-label="Pagini recenzii"><button aria-label="Recenzii anterioare" disabled={reading || reviews.page <= 1} onClick={() => readPage(reviews.page - 1)}><ChevronLeft size={18} /></button><span>{reviews.page} / {reviews.pageCount}</span><button aria-label="Recenzii următoare" disabled={reading || reviews.page >= reviews.pageCount} onClick={() => readPage(reviews.page + 1)}><ChevronRight size={18} /></button></nav>}</>}
       </div>
       <div className="feedback-compose"><h3>{eligibility?.ownReview ? "Recenzia ta" : "Scrie o recenzie"}</h3>

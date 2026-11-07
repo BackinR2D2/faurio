@@ -14,7 +14,11 @@ test("public products expose reviews without exposing buyer identity or private 
   expect(response.status()).toBe(200);
   const body = await response.json();
   expect(body.available).toBe(true);
-  for (const review of body.reviews) expect(Object.keys(review).sort()).toEqual(["body", "created_at", "id", "rating", "verified_purchase"]);
+  for (const review of body.reviews) {
+    expect(Object.keys(review).sort()).toEqual(["author", "body", "created_at", "id", "rating", "verified_purchase"]);
+    expect(Object.keys(review.author).sort()).toEqual(["initials", "name"]);
+    expect(review.author.name).toBeTruthy();expect(review.author.initials).toBeTruthy();
+  }
   expect((await request.get("/api/reviews?productId=cana-luna-001&mode=eligibility")).status()).toBe(401);
   expect((await request.delete("/api/reviews", { data: { id: "00000000-0000-4000-8000-000000000000" } })).status()).toBe(401);
 });
