@@ -2,11 +2,13 @@
 
 ## Cod și interfață
 
-- `npm test`: 99/99 teste unitare și de integrare PostgreSQL PGlite.
+- `npm test`: 101/101 teste unitare și de integrare PostgreSQL PGlite.
 - TypeScript strict, ESLint, build de producție și `git diff --check`: trecute.
 - Rularea integrală desktop/mobil a trecut 119 cazuri și a identificat o cursă la Undo în Studio. Aceasta a fost remediată; regresia controlează explicit un autosave întârziat și revenirea atât în previzualizare, cât și în ciorna salvată. A fost repetată de trei ori pe fiecare viewport.
 - Cele 14 regresii dedicate Admin/catalog au trecut separat. Cele opt probe Admin au trecut și pe buildul de producție; cele două probe de indisponibilitate a căutării au trecut pe serverul QA izolat.
 - Cazul care creează și închide ateliere este opt-in și nu a fost rulat peste baza curățată.
+
+Regresie suplimentară: filtrul manual cu buget `132.38`, fără text de căutare, provoca o eroare PostgreSQL deoarece coloana `products.price` este de tip integer. Pragul minim este acum rotunjit în sus și maximul în jos numai la construirea predicatelor pentru această coloană; valorile din formular și URL rămân exacte. Testele desktop/mobil verifică aplicarea, paginarea, reload-ul, intervalele zecimale și intervalele fără potriviri. Testele unitare compară predicatul adaptat cu cel numeric pentru toate prețurile întregi între 0 și 250 și mai multe perechi de limite. Nu s-a modificat schema sau vreun preț stocat.
 
 Incidentul istoric cu `<small>` în brand nu a fost reprodus. Acea etichetă nu mai există în brand; nu s-a ascuns problema cu `suppressHydrationWarning`. Intrarea directă în cele patru pagini Admin, reload-ul, navigarea client-side și sesiunea salvată simulată sunt verificate. Anul din footer este transmis de server, evitând diferențe între ceasuri; testul fixează browserul în anul 2040.
 

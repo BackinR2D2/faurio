@@ -1,9 +1,29 @@
 import { test } from "node:test";
 import assert from "node:assert/strict";
-import { catalogHref, catalogMaterialOr, catalogStringList, changedCatalogFilters, parseCatalogFilters, visibleCatalogFilters } from "../../lib/catalog-filters.ts";
+import { catalogHref, catalogIntegerPriceBounds, catalogMaterialOr, catalogStringList, changedCatalogFilters, parseCatalogFilters, visibleCatalogFilters } from "../../lib/catalog-filters.ts";
 import { interpretNaturalQuery } from "../../lib/search-intent.ts";
 
 const options = { categories: ["Ceramică", "Papetărie"], materials: ["ceramică", "hârtie"], productTypes: ["Cană", "Jurnal"], typeCategories: { "Cană": ["Ceramică"], "Jurnal": ["Papetărie"] } };
+test("integer database predicates preserve exact decimal budget semantics without mutating filters", () => {
+  const filters = { minPrice: 132.38, maxPrice: 149.99 };
+  assert.deepEqual(catalogIntegerPriceBounds(filters), { minPrice: 133, maxPrice: 149 });
+  assert.deepEqual(filters, { minPrice: 132.38, maxPrice: 149.99 });
+  for (const minimum of [undefined, 0, 0.01, 80.5, 132, 132.38, 150.75]) {
+    for (const maximum of [undefined, 0, 0.38, 132, 132.38, 149.99, 200]) {
+      const bounds = catalogIntegerPriceBounds({ minPrice: minimum, maxPrice: maximum });
+      for (let price = 0; price <= 250; price++) {
+        const expected = (minimum === undefined || price >= minimum) && (maximum === undefined || price <= maximum);
+        const actual = (bounds.minPrice === undefined || price >= bounds.minPrice) && (bounds.maxPrice === undefined || price <= bounds.maxPrice);
+        assert.equal(actual, expected, JSON.stringify({ minimum, maximum, price }));
+      }
+    }
+  }
+});
+test("integer price predicates retain zero and omit non-finite bounds", () => {
+  assert.deepEqual(catalogIntegerPriceBounds({ minPrice: 0, maxPrice: 0 }), { minPrice: 0, maxPrice: 0 });
+  assert.deepEqual(catalogIntegerPriceBounds({ minPrice: NaN, maxPrice: Infinity }), { minPrice: undefined, maxPrice: undefined });
+  assert.deepEqual(catalogIntegerPriceBounds({}), { minPrice: undefined, maxPrice: undefined });
+});
 test("catalog filter URLs round-trip multiple selections, zero and decimal prices", () => {
   const filters = { categories: ["Ceramică", "Papetărie"], materials: ["ceramică", "hârtie reciclată"], productTypes: ["Cană", "Jurnal"], minPrice: 0, maxPrice: 150.75, ready: true, sort: "pret-mic" as const };
   const url = new URL(catalogHref("cadou", filters, 3), "https://example.test");

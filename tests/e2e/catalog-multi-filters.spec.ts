@@ -9,6 +9,43 @@ async function choose(page: Page, label: string, choices: string[]) {
   await page.keyboard.press("Escape");
 }
 
+test("manual decimal budgets work without a search query through apply, reload and pagination", async ({ page }, info) => {
+  test.skip(!process.env.SUPABASE_SERVICE_ROLE_KEY, "Checks actual integer-priced catalog products through PostgREST.");
+  const errors: string[] = [];
+  page.on("pageerror", error => errors.push(error.message));
+  const prices = async () => (await page.locator(".product-price b").allTextContents()).map(value => Number(value.replace(/[^\d,.-]/g, "").replace(",", ".")));
+  await page.goto("/catalog");
+  await openFilters(page);
+  await page.getByRole("spinbutton", { name: "Preț maxim în lei" }).fill("132.38");
+  await page.getByRole("button", { name: "Aplică filtrele" }).click();
+  await expect(page).toHaveURL(url => url.searchParams.get("pret") === "132.38" && !url.searchParams.has("q"));
+  await expect(page.locator(".catalog-results")).toHaveAttribute("aria-busy", "false");
+  await expect(page.locator(".product-card").first()).toBeVisible();
+  expect((await prices()).every(price => price <= 132.38)).toBe(true);
+  await page.getByRole("link", { name: "Pagina următoare" }).click();
+  await expect(page).toHaveURL(/page=2/);
+  await expect(page.locator(".catalog-results")).toHaveAttribute("aria-busy", "false");
+  expect((await prices()).every(price => price <= 132.38)).toBe(true);
+  expect((await page.reload())?.status()).toBe(200);
+  await openFilters(page);
+  await expect(page.getByRole("spinbutton", { name: "Preț maxim în lei" })).toHaveValue("132.38");
+  await page.screenshot({ path: info.outputPath("decimal-budget.png") });
+  for (const [params, minimum, maximum] of [
+    ["pretMin=132.38", 132.38, Infinity],
+    ["pretMin=132.38&pret=149.99", 132.38, 149.99],
+  ] as const) {
+    expect((await page.goto(`/catalog?${params}`))?.status()).toBe(200);
+    await expect(page.locator(".product-card").first()).toBeVisible();
+    expect((await prices()).every(price => price >= minimum && price <= maximum)).toBe(true);
+  }
+  for (const params of ["pret=0.38", "pretMin=132.38&pret=132.38"]) {
+    expect((await page.goto(`/catalog?${params}`))?.status()).toBe(200);
+    await expect(page.locator(".product-card")).toHaveCount(0);
+    await expect(page.getByRole("heading", { name: "Nicio potrivire exactă" })).toBeVisible();
+  }
+  expect(errors).toEqual([]);
+});
+
 test("multiple categories and materials persist through apply, reload, pagination and history", async ({ page }) => {
   await page.goto("/catalog");
   await openFilters(page);

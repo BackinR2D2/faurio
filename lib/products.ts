@@ -9,7 +9,7 @@ import type { ResolvedIntent } from "@/lib/search/ai";
 import { diversifyRecommendations } from "@/lib/search/inventory";
 import { searchFailureNotice } from "@/lib/search/status";
 import { catalogCardColumns, legacyCatalogCardColumns, catalogCardProduct } from "@/lib/catalog-projection";
-import { catalogMaterialOr, catalogStringList, selectedCategories, selectedMaterials } from "@/lib/catalog-filters";
+import { catalogIntegerPriceBounds, catalogMaterialOr, catalogStringList, selectedCategories, selectedMaterials } from "@/lib/catalog-filters";
 
 type ProductRow = Record<string, unknown>;
 
@@ -87,8 +87,9 @@ export async function getCatalogProducts({ query = "", page = 1, pageSize = CATA
   if (categories.length) request = request.filter("category", "in", catalogStringList(categories));
   if (filters.productTypes?.length) request = request.filter("product_type", "in", catalogStringList(filters.productTypes));
   if (materials.length) request = request.or(catalogMaterialOr(materials));
-  if (filters.minPrice !== undefined && Number.isFinite(filters.minPrice)) request = request.gte("price", filters.minPrice);
-  if (filters.maxPrice !== undefined && Number.isFinite(filters.maxPrice)) request = request.lte("price", filters.maxPrice);
+  const priceBounds = catalogIntegerPriceBounds(filters);
+  if (priceBounds.minPrice !== undefined) request = request.gte("price", priceBounds.minPrice);
+  if (priceBounds.maxPrice !== undefined) request = request.lte("price", priceBounds.maxPrice);
   if (filters.minRating && source === "products") return { products: [], total: 0, page: 1, pageSize: safePageSize, pageCount: 0, configured: true, intent };
   if (filters.minRating) request = request.eq("rating_source", "verified").gt("reviews", 0).gte("rating", filters.minRating);
   if (filters.ready) request = request.lte("shipping_days", 2);

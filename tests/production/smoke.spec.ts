@@ -3,6 +3,27 @@ import { expect,test } from "@playwright/test";
 test("deployed health endpoint identifies Faurio",async({request})=>{
   const health=await request.get("/api/health");expect(health.ok()).toBeTruthy();expect((await health.json()).service).toBe("faurio");
 });
+test("decimal manual prices render and respect both budget bounds without a query", async ({ page }) => {
+  const errors: string[] = [];
+  page.on("pageerror", error => errors.push(error.message));
+  for (const [params, minimum, maximum] of [
+    ["pret=132.38", 0, 132.38],
+    ["pretMin=132.38", 132.38, Infinity],
+    ["pretMin=132.38&pret=149.99", 132.38, 149.99],
+  ] as const) {
+    expect((await page.goto(`/catalog?${params}`))?.status()).toBe(200);
+    await expect(page.locator(".product-card").first()).toBeVisible();
+    const prices = (await page.locator(".product-price b").allTextContents()).map(value => Number(value.replace(/[^\d,.-]/g, "").replace(",", ".")));
+    expect(prices.every(price => price >= minimum && price <= maximum)).toBe(true);
+    if ((page.viewportSize()?.width || 0) <= 850) await page.getByRole("button", { name: "Filtre", exact: true }).click();
+    const bounds = new URLSearchParams(params);
+    await expect(page.getByRole("spinbutton", { name: "Preț maxim în lei" })).toHaveValue(bounds.get("pret") || "");
+    await expect(page.getByRole("spinbutton", { name: "Preț minim în lei" })).toHaveValue(bounds.get("pretMin") || "");
+  }
+  expect((await page.goto("/catalog?pretMin=132.38&pret=132.38"))?.status()).toBe(200);
+  await expect(page.getByRole("heading", { name: "Nicio potrivire exactă" })).toBeVisible();
+  expect(errors).toEqual([]);
+});
 for(const path of ["/","/catalog","/makers","/sell","/sell/fees","/cont","/contact","/blog"]){
   test(`public route ${path} renders without horizontal overflow`,async({page},info)=>{
     const response=await page.goto(path,{waitUntil:"domcontentloaded"});expect(response?.status()).toBe(200);

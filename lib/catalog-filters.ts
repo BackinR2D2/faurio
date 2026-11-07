@@ -7,6 +7,12 @@ const values = (value: string | string[] | undefined) => [...new Set((Array.isAr
 const number = (value: string | string[] | undefined) => typeof value === "string" && value.trim() && Number.isFinite(Number(value)) && Number(value) >= 0 ? Math.min(100000, Number(value)) : undefined;
 export const selectedCategories = (filters: CatalogFilters) => filters.categories ?? values(filters.category);
 export const selectedMaterials = (filters: CatalogFilters) => filters.materials ?? values(filters.material);
+export function catalogIntegerPriceBounds(filters: Pick<CatalogFilters, "minPrice" | "maxPrice">) {
+  return {
+    minPrice: filters.minPrice !== undefined && Number.isFinite(filters.minPrice) ? Math.ceil(filters.minPrice) : undefined,
+    maxPrice: filters.maxPrice !== undefined && Number.isFinite(filters.maxPrice) ? Math.floor(filters.maxPrice) : undefined,
+  };
+}
 export const catalogStringList = (items: string[]) => `(${items.map(item => JSON.stringify(item)).join(",")})`;
 export const catalogMaterialOr = (items: string[]) => items.map(item => {
   const pattern = item === "in" ? "(^|[^[:alnum:]])in([^[:alnum:]]|$)" : item.replace(/[.*+?^${}()|[\]\\]/g, "\\$&");
