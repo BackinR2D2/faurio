@@ -8,7 +8,7 @@ Catalogul demonstrativ cuprinde ceramică, sticlărie, textile, lumânări, biju
 
 Frontend și backend: Next.js App Router, React și TypeScript. Date și autentificare: Supabase PostgreSQL, Auth și Storage. Politicile RLS și validarea serverului izolează atelierele. Route handlers implementează comenzile, moderarea și integrările. Stripe Checkout/Connect este procesatorul folosit în sandbox. Confirmările comenzilor sunt trimise printr-un outbox privat, cu transport SMTP pentru pilot.
 
-Căutarea folosește interpretare Groq într-o schemă JSON strictă și filtrare SQL pe întregul inventar publicat înainte de paginare. Un produs absent nu este înlocuit cu altul fără legătură; o poveste despre un destinatar generează tipuri potrivite din inventar. Interpretarea nu este o garanție de înțelegere perfectă a oricărui text.
+Căutarea folosește interpretare Groq într-o schemă JSON strictă și filtrare SQL pe întregul inventar publicat înainte de paginare. Numai la limita furnizorului (HTTP 429) sau cota zilnică epuizată se activează fallback-ul după cuvinte-cheie, cu aceleași restricții SQL. Acesta nu înlocuiește interpretarea semantică a poveștilor. Un produs absent nu este înlocuit cu altul fără legătură; în modul principal, o poveste despre un destinatar generează tipuri potrivite din inventar. Interpretarea nu este o garanție de înțelegere perfectă a oricărui text.
 
 ## Funcțiile magazinului
 

@@ -2,13 +2,15 @@
 
 ## Cod și interfață
 
-- `npm test`: 101/101 teste unitare și de integrare PostgreSQL PGlite.
+- `npm test`: 108/108 teste unitare și de integrare PostgreSQL PGlite.
 - TypeScript strict, ESLint, build de producție și `git diff --check`: trecute.
 - Rularea integrală desktop/mobil a trecut 119 cazuri și a identificat o cursă la Undo în Studio. Aceasta a fost remediată; regresia controlează explicit un autosave întârziat și revenirea atât în previzualizare, cât și în ciorna salvată. A fost repetată de trei ori pe fiecare viewport.
 - Cele 14 regresii dedicate Admin/catalog au trecut separat. Cele opt probe Admin au trecut și pe buildul de producție; cele două probe de indisponibilitate a căutării au trecut pe serverul QA izolat.
 - Cazul care creează și închide ateliere este opt-in și nu a fost rulat peste baza curățată.
 
 Regresie suplimentară: filtrul manual cu buget `132.38`, fără text de căutare, provoca o eroare PostgreSQL deoarece coloana `products.price` este de tip integer. Pragul minim este acum rotunjit în sus și maximul în jos numai la construirea predicatelor pentru această coloană; valorile din formular și URL rămân exacte. Testele desktop/mobil verifică aplicarea, paginarea, reload-ul, intervalele zecimale și intervalele fără potriviri. Testele unitare compară predicatul adaptat cu cel numeric pentru toate prețurile întregi între 0 și 250 și mai multe perechi de limite. Nu s-a modificat schema sau vreun preț stocat.
+
+Fallback la cotă: șase teste unitare verifică activarea exclusivă pentru 429/cotă zilnică, păstrarea restricțiilor și revenirea la interpretarea principală. Un test PostgreSQL verifică produsele publicate, termenii obligatorii, bugetul, culoarea, vizibilitatea și absența înlocuitorilor pentru produse lipsă. Opt probe browser au trecut pe buildul de producție local: patru cu `GROQ_DAILY_SEARCH_LIMIT=0`, patru cu transport Groq 429 simulat. Produsele au fost citite din Supabase; nu s-a epuizat intenționat cota publică. Sunt verificate și aplicarea unui filtru suplimentar, paginarea și reload-ul. Cele opt regresii normale ale catalogului au trecut separat. Rulările folosesc directoare de artefacte distincte după identificarea unei coliziuni de trace între procese, fără a modifica aserțiunile ca să ascundă o eroare a aplicației.
 
 Incidentul istoric cu `<small>` în brand nu a fost reprodus. Acea etichetă nu mai există în brand; nu s-a ascuns problema cu `suppressHydrationWarning`. Intrarea directă în cele patru pagini Admin, reload-ul, navigarea client-side și sesiunea salvată simulată sunt verificate. Anul din footer este transmis de server, evitând diferențe între ceasuri; testul fixează browserul în anul 2040.
 
@@ -27,6 +29,8 @@ Au fost verificate: set de pahare versus pahare individuale, două tipuri altern
 Interpretările sunt reale, nu răspunsuri hardcodate. Testele pot folosi cache-ul interpretărilor Groq, dar produsele, prețurile și eligibilitatea sunt recitite din Supabase. Filtrarea SQL se face înainte de numărare și paginare.
 
 Evaluarea intensivă a expus limitele gratuite Groq (429) și generări care returnau schema în locul datelor (400). Promptul a fost compactat și clarificat; o eroare de generare a schemei permite o singură reîncercare. Limitele providerului nu sunt ocolite și nu sunt ascunse prin rezultate fără legătură. Nu se garantează înțelegerea perfectă a oricărui text sau disponibilitatea nelimitată a unui serviciu gratuit.
+
+La 429 sau epuizarea cotei zilnice există acum un mod explicit după cuvinte-cheie, fără generare semantică de recomandări. Alte erori rămân indisponibilitate cu reîncercare. Modul de rezervă nu este salvat ca interpretare Groq și nu lărgește automat cererile fără potriviri.
 
 ## Baza publică și configurarea
 

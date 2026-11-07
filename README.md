@@ -26,7 +26,7 @@ Testele de browser marchează explicit transporturile simulate cu MOCK. Fluxul `
 
 ## Funcționalități
 
-- Căutare în limbaj natural pe inventarul publicat, filtre și paginare.
+- Căutare în limbaj natural pe inventarul publicat, filtre și paginare; fallback strict după cuvinte-cheie numai la depășirea cotei.
 - Cont cu confirmare email, recuperare parolă, profil, coș și favorite sincronizate.
 - Ateliere independente, editor de pagină, fotografii proprii, produse și moderare.
 - Plată găzduită, rezervare atomică a stocului, webhook-uri semnate și notificări cu outbox.

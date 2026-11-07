@@ -50,7 +50,7 @@ export async function getCatalogProducts({ query = "", page = 1, pageSize = CATA
   if (intent?.unsupported) return { products: [], total: 0, page: 1, pageSize: safePageSize, pageCount: 0, configured: true, intent };
 
   const source = await publicProductSource();
-  if (intent?.engine === "groq" && source === "catalog_products") {
+  if ((intent?.engine === "groq" || intent?.engine === "keywords") && source === "catalog_products") {
     try {
       const discovery = intent.queryMode === "discovery" && (!filters.sort || filters.sort === "relevanta");
       const size = discovery ? 48 : safePageSize;

@@ -1,6 +1,6 @@
 # Căutare Faurio
 
-Fiecare căutare nevidă este interpretată pe server prin Groq, cu modelul implicit `openai/gpt-oss-120b`. Nu este necesară o cheie sau un abonament OpenAI. UI-ul prezintă rezultatele, nu tehnologia folosită.
+Căutările cu text folosesc implicit interpretarea pe server prin Groq, cu modelul `openai/gpt-oss-120b`, sau o interpretare validă din cache. Numai la HTTP 429 ori epuizarea cotei zilnice a aplicației se activează căutarea după cuvinte-cheie. Nu este necesară o cheie sau un abonament OpenAI. UI-ul prezintă rezultatele, nu furnizorul folosit.
 
 ## Selectarea produselor
 
@@ -28,7 +28,11 @@ Migrarea `202611070001_catalog_multi_filters.sql` este aplicată în ae_proj. `n
 
 Interpretările valide au și un cache local de maximum 15 secunde, care nu depășește expirarea indexului de inventar. Acesta evită recitirea interpretării la aplicarea filtrelor și paginării. Cheia locală separă textele originale prin hash; nu reutilizează rezultatul deja îmbinat al altui text care ar deveni identic după mascarea datelor personale. Erorile nu sunt păstrate. Rezultatele, prețurile, stocurile și vizibilitatea produselor sunt citite în continuare din baza de date la fiecare cerere.
 
-Timeout: 12 secunde per încercare; maximum 1.500 tokenuri de răspuns. Dacă lipsesc cheia, schema sau cota, ori furnizorul refuză cererea, căutarea returnează HTTP 503 și permite reîncercarea. Nu revine în tăcere la reguli și nu pretinde că lipsa serviciului înseamnă lipsă de produse. Catalogul fără query rămâne navigabil.
+Timeout: 12 secunde per încercare; maximum 1.500 tokenuri de răspuns. Dacă lipsesc cheia ori schema, baza de date nu răspunde sau apare o altă eroare de furnizor/validare, căutarea returnează HTTP 503 și permite reîncercarea. Aceste erori nu sunt ascunse prin fallback. Catalogul fără query rămâne navigabil.
+
+La `AI_PROVIDER_429` sau `AI_SEARCH_BUDGET_EXHAUSTED`, rezultatul are `engine=keywords`, `fallbackReason` și HTTP 200, fără `failure`. Parserul local extrage tipurile cunoscute, prețul, culorile, materialele și excluderile; fiecare termen literal rămas este obligatoriu în numele, tipul sau descrierea produsului. Aceleași restricții SQL se aplică pe întregul catalog publicat, înainte de numărare și paginare, inclusiv rafinările manuale. Nu se completează cu produse ieftine fără legătură.
+
+UI-ul afișează discret „Căutare după cuvinte-cheie” și recomandă formularea produsului și caracteristicilor. Acest mod nu interpretează semantic o poveste despre un cadou și poate întoarce zero potriviri; nu inventează recomandări și nu pretinde aceeași capacitate ca modelul. Fallback-ul nu este salvat în cache-ul interpretărilor. Următoarea cerere încearcă din nou fluxul normal, fără comutare permanentă sau schimbarea cotelor.
 
 Planul gratuit are cote și nu oferă disponibilitate nelimitată: [Groq rate limits](https://console.groq.com/docs/rate-limits), [structured outputs](https://console.groq.com/docs/structured-outputs). `SEARCH_AI_ENABLED=false` este numai un comutator operațional pentru testarea indisponibilității, nu un motor alternativ.
 
@@ -36,4 +40,4 @@ Emailurile și telefoanele evidente sunt mascate înainte de trimitere, fără g
 
 ## Verificare
 
-`npx tsx scripts/check-groq.ts` face apeluri reale și nu modifică DB. Testele `tests/e2e/ai-recommendations.spec.ts` verifică separat interpretarea, produsele din DB, bugetul, diversitatea și paginarea. Testele unitare cu răspunsuri simulate nu înlocuiesc evaluarea furnizorului live.
+`npx tsx scripts/check-groq.ts` face apeluri reale și nu modifică DB. Testele `tests/e2e/ai-recommendations.spec.ts` verifică separat interpretarea, produsele din DB, bugetul, diversitatea și paginarea. Testele unitare cu răspunsuri simulate nu înlocuiesc evaluarea furnizorului live. Regresiile `search-quota-fallback` verifică politica 429/cotă, restricțiile și revenirea la motorul principal; proba de browser este opt-in cu `SEARCH_QUOTA_E2E=1`, numai pe un server QA local izolat configurat cu `GROQ_DAILY_SEARCH_LIMIT=0`, niciodată prin epuizarea intenționată a cotei publice. Pentru simularea transportului 429, setează `SEARCH_QUOTA_REASON=AI_PROVIDER_429` în runner-ul de teste și folosește un transport simulat numai pe serverul QA.

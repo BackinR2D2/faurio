@@ -18,7 +18,7 @@ export const aiIntentSchema = z.object({
 }).strict();
 export type AiIntent = z.infer<typeof aiIntentSchema>;
 export type SearchTaxonomy = { productTypes: string[]; categories: string[]; materials: string[]; colors: string[] };
-export type ResolvedIntent = SearchIntent & { engine?: "groq"; queryMode?: "exact" | "discovery"; rankingTerms?: string[]; requiredTerms?: string[]; explanation?: string; recommendations?: AiIntent["recommendations"]; failure?: string };
+export type ResolvedIntent = SearchIntent & { engine?: "groq" | "keywords"; fallbackReason?: "AI_PROVIDER_429" | "AI_SEARCH_BUDGET_EXHAUSTED"; queryMode?: "exact" | "discovery"; rankingTerms?: string[]; requiredTerms?: string[]; explanation?: string; recommendations?: AiIntent["recommendations"]; failure?: string };
 
 export const normalizeSearch = (value: string) => value.normalize("NFD").replace(/[\u0300-\u036f]/g, "").toLowerCase();
 export const redactSearch = (value: string) => value.replace(/[\w.+-]+@[\w.-]+\.[a-z]{2,}/gi, "[email]").replace(/(?:\+?\d[\d ()-]{8,}\d)/g, "[telefon]").slice(0, 1200);

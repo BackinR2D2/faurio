@@ -5,6 +5,7 @@ import { interpretNaturalQuery } from "@/lib/search-intent";
 import { aiIntentSchema, DEFAULT_SEARCH_MODEL, extractGroqIntent, mergeAiIntent, redactSearch, type ResolvedIntent, type SearchTaxonomy } from "./ai";
 import { searchFailureNotice, searchFailureReason } from "./status";
 import { inventoryFingerprint, summarizeInventory, type InventoryRow } from "./inventory";
+import { withQuotaFallback } from "./quota-fallback";
 
 const inflight = new Map<string, Promise<ResolvedIntent>>();
 const recentIntents = new Map<string, { expires: number; intent: ResolvedIntent }>();
@@ -55,18 +56,20 @@ export async function resolveSearch(query: string, db: SupabaseClient): Promise<
   if (inflight.has(flightKey)) return inflight.get(flightKey)!;
   const work = (async () => {
     try {
-      const { taxonomy } = inventory;
-      const { data: cached } = await db.from("search_intent_cache").select("intent").eq("cache_key", cacheKey).gt("expires_at", new Date().toISOString()).maybeSingle();
-      if (cached) return mergeAiIntent(query, aiIntentSchema.parse(cached.intent), taxonomy as SearchTaxonomy);
-      const requestedLimit = Number(process.env.GROQ_DAILY_SEARCH_LIMIT || 200);
-      const limit = Number.isFinite(requestedLimit) ? Math.max(0, Math.min(1000, Math.trunc(requestedLimit))) : 200;
-      const { data: allowed, error: quotaError } = await db.rpc("claim_search_ai_slot", { p_limit: limit });
-      if (quotaError) throw new Error(["PGRST202", "PGRST205", "42P01", "42883"].includes(quotaError.code) ? "AI_SEARCH_MIGRATION_REQUIRED" : "AI_SEARCH_DATABASE_UNAVAILABLE");
-      if (!allowed) throw new Error("AI_SEARCH_BUDGET_EXHAUSTED");
-      const ai = await extractGroqIntent(query, taxonomy, key, model, fetch, inventory.context);
-      const intent = mergeAiIntent(query, ai, taxonomy as SearchTaxonomy);
-      await db.from("search_intent_cache").upsert({ cache_key: cacheKey, intent: ai, expires_at: new Date(Date.now() + 60 * 60 * 1000).toISOString() });
-      return intent;
+      return await withQuotaFallback(query, async () => {
+        const { taxonomy } = inventory;
+        const { data: cached } = await db.from("search_intent_cache").select("intent").eq("cache_key", cacheKey).gt("expires_at", new Date().toISOString()).maybeSingle();
+        if (cached) return mergeAiIntent(query, aiIntentSchema.parse(cached.intent), taxonomy as SearchTaxonomy);
+        const requestedLimit = Number(process.env.GROQ_DAILY_SEARCH_LIMIT || 200);
+        const limit = Number.isFinite(requestedLimit) ? Math.max(0, Math.min(1000, Math.trunc(requestedLimit))) : 200;
+        const { data: allowed, error: quotaError } = await db.rpc("claim_search_ai_slot", { p_limit: limit });
+        if (quotaError) throw new Error(["PGRST202", "PGRST205", "42P01", "42883"].includes(quotaError.code) ? "AI_SEARCH_MIGRATION_REQUIRED" : "AI_SEARCH_DATABASE_UNAVAILABLE");
+        if (!allowed) throw new Error("AI_SEARCH_BUDGET_EXHAUSTED");
+        const ai = await extractGroqIntent(query, taxonomy, key, model, fetch, inventory.context);
+        const intent = mergeAiIntent(query, ai, taxonomy as SearchTaxonomy);
+        await db.from("search_intent_cache").upsert({ cache_key: cacheKey, intent: ai, expires_at: new Date(Date.now() + 60 * 60 * 1000).toISOString() });
+        return intent;
+      });
     } catch (error) {
       const reason = searchFailureReason(error);
       console.warn("[search-ai]", reason);
@@ -76,7 +79,7 @@ export async function resolveSearch(query: string, db: SupabaseClient): Promise<
   inflight.set(flightKey, work);
   try {
     const intent = await work;
-    if (!intent.failure && !intent.unsupported) {
+    if (intent.engine === "groq" && !intent.failure && !intent.unsupported) {
       if (recentIntents.size >= 100) recentIntents.delete(recentIntents.keys().next().value!);
       recentIntents.set(recentKey, { expires: Math.min(Date.now() + 15000, inventoryCache?.expires || Date.now()), intent });
     }

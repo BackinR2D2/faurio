@@ -3,6 +3,7 @@ import assert from "node:assert/strict";
 import { readFile } from "node:fs/promises";
 import { PGlite } from "@electric-sql/pglite";
 import { defaultLayout } from "../../lib/marketplace/contracts.ts";
+import { keywordQuotaFallback } from "../../lib/search/quota-fallback.ts";
 
 const db = new PGlite();
 const sellerA = "10000000-0000-4000-8000-000000000001";
@@ -226,6 +227,25 @@ test("manual multi-filters use OR within a group, AND across groups and keep que
     await db.exec(`set role ${role}`);
     try { await assert.rejects(db.exec("select public.search_marketplace_catalog('{}','{}')"), /permission denied/); } finally { await db.exec("reset role"); }
   }
+});
+
+test("keyword fallback searches real published rows with hard constraints, not semantic substitutes", async () => {
+  await db.exec("begin");
+  try {
+    for (const [id, type, price, color] of [["quota-match", "Jurnal", 100, "verde"], ["quota-expensive", "Jurnal", 150, "verde"], ["quota-color", "Jurnal", 100, "maro"], ["quota-type", "Cană", 100, "verde"]]) {
+      await db.query("insert into public.products(id,name,product_type,category,price,stock,active,listing_status,material,color,description) values($1,'Folioquota',$2,'Papetărie',$3,3,true,'published','hârtie',$4,'Produs pentru notițe')", [id, type, price, color]);
+    }
+    const search = (query: string, filters = {}) => sqlValue<{ total: number; products: { id: string }[]; page: number }>("select public.search_marketplace_catalog($1,$2,999,12) as value", [keywordQuotaFallback(query, "AI_PROVIDER_429"), filters]);
+    const result = await search("jurnal folioquota verde între 80,50 și 132,38 lei, în stoc");
+    assert.equal(result.total, 1);
+    assert.equal(result.page, 1);
+    assert.deepEqual(result.products.map(product => product.id), ["quota-match"]);
+    assert.equal((await search("jurnal folioquota verde sub 132,38 lei", { maxPrice: 90 })).total, 0);
+    assert.equal((await search("tricou maro sub 100 lei")).total, 0);
+    assert.equal((await search("cadou unchiului meu profesor sub 250 lei")).total, 0);
+    await db.query("update public.products set active=false where id='quota-match'");
+    assert.equal((await search("jurnal folioquota verde sub 132,38 lei")).total, 0);
+  } finally { await db.exec("rollback"); }
 });
 
 test("shared AI quota is bounded across clients, and cache/usage tables are private", async () => {
