@@ -29,10 +29,18 @@ Netlify urmărește repository-ul privat `BackinR2D2/faurio`, branch `main`. Ver
 
 SMTP: conexiunea și autentificarea Gmail sunt verificate fără mesaj nou. Outbox-ul are cinci notificări marcate `sent`; acceptarea SMTP nu dovedește livrarea în inbox. Confirmarea înscrierii a fost primită și confirmată de utilizator în testul anterior.
 
+## Verificarea publicării
+
+Commitul `1876522` a fost publicat automat de GitHub pe Netlify. Cele 24 de teste publice desktop/mobil au trecut, iar pipeline-ul GitHub complet a încheiat cu succes testele, analiza statică și buildul. Probele publice includ selectoarele, modelele noi, excluderi/alternative în căutare, paginare și refuzul accesului anonim.
+
+[PageSpeed public, 7 noiembrie 2026](https://pagespeed.web.dev/analysis/https-faurio-marketplace-netlify-app/dr05c5yiw7?form_factor=mobile): mobil 95 performanță, 100 accesibilitate, 100 bune practici și 100 SEO; LCP 2,4 s, TBT 60 ms, CLS 0. Desktopul a avut performanță 70 și TBT 1.780 ms, motiv pentru reducerea ulterioară a costului scenei 3D. Sunt măsurători de laborator, nu date de teren sau garanții de accesibilitate/SEO.
+
+Reglajul ulterior reduce harta iluminării de la 256 la 64 px pe față și plafonul pixel ratio la 1,25. Randarea se oprește când scena este nemodificată și în pauză; scrierea într-un câmp suspendă mișcarea. Texturile obiectelor rămân neschimbate. Toate cele opt teste homepage desktop/mobil au trecut din nou, inclusiv pauza în timpul scrierii. Buildul și TypeScript au fost reverificate.
+
 ## Limitele dovezilor
 
 Testele SQL și cele marcate MOCK nu reprezintă plăți reale, KYC, transferuri sau primirea unui colet. Fluxurile financiare izolate verifică rezervarea stocului, idempotenta, eligibilitatea creatorului, comisionul, ledger-ul, rambursările și izolarea comenzilor. Codul acceptă numai chei de plată TEST.
 
 La verificarea dinaintea publicării nu exista încă un atelier nou sau un cont Connect configurat. Titularul trebuie să creeze atelierul, să obțină aprobarea operatorului și să finalizeze personal onboardingul TEST. Urmează apoi plata TEST către acel creator, verificarea comisionului/transferului și confirmarea emailului în inbox. Până atunci nu este declarată încheiată acceptanța financiară multi-vendor.
 
-Nu există integrare API de curier/AWB sau factură fiscală românească certificată. Scorul Lighthouse local istoric nu este prezentat drept PageSpeed public. Aceste distincții sunt importante pentru susținerea proiectului și pentru o eventuală lansare comercială.
+Nu există integrare API de curier/AWB sau factură fiscală românească certificată. Scorul Lighthouse local istoric nu este prezentat drept PageSpeed public; raportul public de mai sus este o măsurătoare separată. Aceste distincții sunt importante pentru susținerea proiectului și pentru o eventuală lansare comercială.

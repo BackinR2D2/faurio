@@ -70,6 +70,14 @@ test("3D scene changes detailed objects automatically without carousel controls"
   await expect(carousel.locator("canvas")).toHaveCount(1);
   const canvas = carousel.locator("canvas");
   const canvasHandle = await canvas.elementHandle();
+  const search = page.getByRole("textbox", { name: "Descrie în limbaj natural ce produs cauți" });
+  await search.focus();
+  await expect(model).toHaveAttribute("data-playback", "paused");
+  const whileTyping = await model.getAttribute("data-model");
+  await page.waitForTimeout(3300);
+  await expect(model).toHaveAttribute("data-model", whileTyping!);
+  await search.blur();
+  await page.mouse.move(0, 0);
   await expect.poll(() => page.evaluate(() => (window as unknown as { sceneChanges: unknown[] }).sceneChanges.length), { timeout: 60000 }).toBeGreaterThanOrEqual(7);
   const changes = await page.evaluate(() => (window as unknown as { sceneChanges: { path: string; time: number }[] }).sceneChanges.slice(0, 7));
   expect(new Set(changes.map(item => item.path)).size).toBe(7);
