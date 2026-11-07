@@ -3,8 +3,8 @@ import { api, ApiError, databaseError, readJson, requireAuth } from "@/lib/marke
 import { getSupabaseAdmin } from "@/lib/supabase-server";
 import { getProductById } from "@/lib/products";
 import { getProductReviews } from "@/lib/product-reviews";
-import { eligibleReviewOrders } from "@/lib/review-queries";
-import { reviewSubmissionSchema, type ReviewEligibility } from "@/lib/reviews";
+import { deleteOwnedReview, eligibleReviewOrders } from "@/lib/review-queries";
+import { reviewDeletionSchema, reviewSubmissionSchema, type ReviewEligibility } from "@/lib/reviews";
 
 export const GET = api(async request => {
   const params = new URL(request.url).searchParams;
@@ -17,15 +17,27 @@ export const GET = api(async request => {
   if (!db) throw new ApiError(503, "REVIEWS_UNAVAILABLE", "Recenziile nu sunt disponibile momentan.");
   const [membership, existing] = await Promise.all([
     auth.supabase.from("shop_memberships").select("shop_id").eq("shop_id", product.shopId || "00000000-0000-0000-0000-000000000000").eq("user_id", auth.user.id).is("revoked_at", null).limit(1),
-    auth.supabase.from("product_reviews").select("order_code").eq("product_id", productId).eq("buyer_id", auth.user.id).limit(1000),
+    auth.supabase.from("product_reviews").select("id,order_code,rating,body,status,created_at").eq("product_id", productId).eq("buyer_id", auth.user.id).order("created_at", { ascending: false }).limit(1),
   ]);
   databaseError(membership.error); databaseError(existing.error);
   const ownProduct = Boolean(membership.data?.length);
-  if (ownProduct) return Response.json({ hasReview: Boolean(existing.data?.length), ownProduct, verifiedPurchase: false } satisfies ReviewEligibility);
-  const reviewedCodes = (existing.data || []).map(review => review.order_code);
-  const { data, error } = await eligibleReviewOrders(db, auth.user.id, productId, reviewedCodes);
+  const review = existing.data?.[0];
+  const ownReview = review ? { id: review.id, rating: review.rating, body: review.body, status: review.status, created_at: review.created_at } : null;
+  if (ownProduct || ownReview) return Response.json({ hasReview: Boolean(ownReview), ownProduct, ownReview, verifiedPurchase: Boolean(review?.order_code) } satisfies ReviewEligibility);
+  const { data, error } = await eligibleReviewOrders(db, auth.user.id, productId, []);
   databaseError(error);
-  return Response.json({ hasReview: reviewedCodes.length > 0, ownProduct: false, verifiedPurchase: Boolean(data?.length) } satisfies ReviewEligibility);
+  return Response.json({ hasReview: false, ownProduct: false, ownReview: null, verifiedPurchase: Boolean(data?.length) } satisfies ReviewEligibility);
+});
+
+export const DELETE = api(async request => {
+  const auth = await requireAuth(request);
+  const body = await readJson(request, reviewDeletionSchema);
+  const db = getSupabaseAdmin();
+  if (!db) throw new ApiError(503, "REVIEWS_UNAVAILABLE", "Recenziile nu sunt disponibile momentan.");
+  const { data, error } = await deleteOwnedReview(db, auth.user.id, body.id);
+  databaseError(error);
+  if (!data) throw new ApiError(404, "REVIEW_NOT_FOUND", "Recenzia nu a fost găsită în contul tău.");
+  return Response.json({ deleted: true });
 });
 
 export const POST = api(async request => {

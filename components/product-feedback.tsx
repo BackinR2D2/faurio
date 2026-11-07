@@ -2,6 +2,7 @@
 
 import { useEffect, useRef, useState, type FormEvent } from "react";
 import Link from "next/link";
+import { useRouter } from "next/navigation";
 import { Check, ChevronLeft, ChevronRight, MessageSquare, RotateCw, ShieldCheck, Star } from "lucide-react";
 import { useAuth } from "@/components/auth-provider";
 import { studioRequest } from "@/lib/marketplace/client";
@@ -15,6 +16,7 @@ export function ProductFeedback({ productId, initial }: { productId: string; ini
 }
 
 function ProductFeedbackContent({ productId, initial, authenticated, loading, accessToken }: { productId: string; initial: ReviewPage; authenticated: boolean; loading: boolean; accessToken: string | null }) {
+  const router = useRouter();
   const [reviews, setReviews] = useState(initial);
   const [eligibility, setEligibility] = useState<ReviewEligibility | null>(null);
   const [eligibilityError, setEligibilityError] = useState("");
@@ -25,6 +27,8 @@ function ProductFeedbackContent({ productId, initial, authenticated, loading, ac
   const [reading, setReading] = useState(false);
   const [error, setError] = useState("");
   const [submitted, setSubmitted] = useState(false);
+  const [confirmDelete, setConfirmDelete] = useState(false);
+  const [deleted, setDeleted] = useState(false);
   const submitting = useRef(false);
   const reader = useRef<AbortController | null>(null);
   useEffect(() => () => reader.current?.abort(), []);
@@ -53,7 +57,18 @@ function ProductFeedbackContent({ productId, initial, authenticated, loading, ac
     submitting.current = true; setBusy(true); setError("");
     try {
       await studioRequest("/api/reviews", accessToken, { method: "POST", body: JSON.stringify({ productId, rating, body: body.trim() }) });
-      setSubmitted(true); setBody("");
+      setSubmitted(true); setDeleted(false); setBody(""); setEligibilityRevision(value => value + 1);
+    } catch (caught) { setError((caught as Error).message); }
+    finally { submitting.current = false; setBusy(false); }
+  }
+  async function removeReview() {
+    if (submitting.current || !accessToken || !eligibility?.ownReview) return;
+    submitting.current = true; setBusy(true); setError("");
+    try {
+      await studioRequest("/api/reviews", accessToken, { method: "DELETE", body: JSON.stringify({ id: eligibility.ownReview.id }) });
+      setConfirmDelete(false); setSubmitted(false); setDeleted(true); setRating(0); setBody(""); setEligibility(null);
+      setEligibilityRevision(value => value + 1);
+      await readPage(reviews.page); router.refresh();
     } catch (caught) { setError((caught as Error).message); }
     finally { submitting.current = false; setBusy(false); }
   }
@@ -66,10 +81,15 @@ function ProductFeedbackContent({ productId, initial, authenticated, loading, ac
           : <>{reviews.reviews.map(review => <article className="feedback-review" key={review.id}><div className="feedback-review-top"><span className="feedback-stars" aria-label={`${review.rating} din 5 stele`}>{[1, 2, 3, 4, 5].map(value => <Star key={value} aria-hidden="true" fill={value <= review.rating ? "currentColor" : "none"} size={16} />)}</span><time dateTime={review.created_at}>{date(review.created_at)}</time></div><p>{review.body}</p><span className="feedback-verified">{review.verified_purchase ? <><ShieldCheck size={14} /> Achiziție verificată</> : "Utilizator înregistrat"}</span></article>)}
             {reviews.pageCount > 1 && <nav className="feedback-pagination" aria-label="Pagini recenzii"><button aria-label="Recenzii anterioare" disabled={reading || reviews.page <= 1} onClick={() => readPage(reviews.page - 1)}><ChevronLeft size={18} /></button><span>{reviews.page} / {reviews.pageCount}</span><button aria-label="Recenzii următoare" disabled={reading || reviews.page >= reviews.pageCount} onClick={() => readPage(reviews.page + 1)}><ChevronRight size={18} /></button></nav>}</>}
       </div>
-      <div className="feedback-compose"><h3>Scrie o recenzie</h3>
+      <div className="feedback-compose"><h3>{eligibility?.ownReview ? "Recenzia ta" : "Scrie o recenzie"}</h3>
+        {deleted && <p role="status">Recenzia a fost ștearsă.</p>}
+        {submitted && <p className="feedback-success" role="status"><Check size={18} /> Recenzia și comentariul au fost trimise la moderare. Mulțumim!</p>}
         {loading ? <p role="status">Se verifică sesiunea…</p> : !authenticated ? <><p>Intră în cont pentru a lăsa o recenzie.</p><Link className="studio-secondary" href={`/cont?next=${encodeURIComponent(`/produs/${productId}#recenzii`)}`}>Autentifică-te</Link></>
           : eligibilityError ? <><p role="alert">{eligibilityError}</p><button className="text-button" onClick={() => { setEligibilityError(""); setEligibility(null); setEligibilityRevision(value => value + 1); }}>Reîncearcă verificarea</button></>
-          : submitted ? <p className="feedback-success" role="status"><Check size={18} /> Recenzia și comentariul au fost trimise la moderare. Mulțumim!</p>
+          : eligibility?.ownReview ? <div className="feedback-own-review"><span className="feedback-stars" aria-label={`${eligibility.ownReview.rating} din 5 stele`}>{[1, 2, 3, 4, 5].map(value => <Star key={value} aria-hidden="true" fill={value <= eligibility.ownReview!.rating ? "currentColor" : "none"} size={16} />)}</span><p>{eligibility.ownReview.body}</p><p>{({ pending: "În curs de moderare", approved: "Publicată", rejected: "Nepublicată" })[eligibility.ownReview.status]}</p>
+            {confirmDelete ? <div className="feedback-delete-confirm"><p>Ștergi definitiv recenzia?</p><div><button className="studio-secondary" disabled={busy} onClick={() => setConfirmDelete(false)}>Anulează</button><button className="studio-secondary" disabled={busy} onClick={removeReview}>{busy ? "Se șterge…" : "Confirmă ștergerea"}</button></div></div> : <button className="studio-text-button" disabled={busy} onClick={() => setConfirmDelete(true)}>Șterge recenzia</button>}
+          </div>
+          : submitted ? null
           : !eligibility ? <p role="status">Se verifică achizițiile…</p>
           : eligibility.ownProduct ? <p>Nu poți recenza produsele propriului atelier.</p>
           : eligibility.hasReview ? <p>Ai trimis deja o recenzie. Recenziile aprobate apar aici după moderare.</p>

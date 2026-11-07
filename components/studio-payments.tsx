@@ -29,17 +29,17 @@ export function StudioPayments() {
     try {
       const result = await studioRequest<{ url: string }>("/api/studio/payments", token, { method: "POST", body: JSON.stringify({ shopId: shop.id, action, acceptFeePolicy: accepted }) });
       const url = new URL(result.url);
-      if (url.protocol !== "https:" || !["connect.stripe.com", "dashboard.stripe.com"].includes(url.hostname)) throw new Error("Stripe nu a returnat o adresă validă.");
+      if (url.protocol !== "https:" || !["connect.stripe.com", "dashboard.stripe.com"].includes(url.hostname)) throw new Error("Serviciul de încasări nu a returnat o adresă validă.");
       window.location.assign(url.href);
     } catch (caught) { setError((caught as Error).message); setBusy(false); }
   }
-  return <section><header className="studio-heading"><h1>Încasări</h1><p>Stripe gestionează verificarea identității și datele bancare.</p></header>
-    <div className="studio-finance-notice"><ShieldCheck /><h2>{status?.ready ? "Stripe a activat încasările de test." : "Configurează contul de încasări."}</h2><p>Mod demonstrativ: se folosesc bani și date Stripe de test. Nu sunt efectuate plăți bancare reale.</p>
+  return <section><header className="studio-heading"><h1>Încasări</h1><p>Gestionează contul de încasări al atelierului.</p></header>
+    <div className="studio-finance-notice"><ShieldCheck /><h2>{status?.ready ? "Contul de încasări este activ." : "Configurează contul de încasări."}</h2><p>Mod de test</p>
       {error && <p className="form-error" role="alert">{error}</p>}
-      {!status && !error && <p role="status">Se verifică starea Stripe…</p>}
-      {status && !status.enabled && <p className="form-notice">Administratorul trebuie să activeze Stripe Connect și migrarea financiară. Nu introducem date bancare în Faurio.</p>}
+      {!status && !error && <p role="status">Se verifică starea contului…</p>}
+      {status && !status.enabled && <p className="form-notice">Administratorul trebuie să activeze configurarea încasărilor.</p>}
       {shop.status !== "active" && <p>Configurarea este disponibilă după aprobarea atelierului.</p>}
-      {shop.role === "owner" && status?.enabled && shop.status === "active" && <><label className="studio-check"><input type="checkbox" checked={accepted} onChange={(event) => setAccepted(event.target.checked)} /><span>Accept <Link href="/termeni#comisioane" target="_blank">condițiile pentru creatori și plăți</Link>.</span></label><div className="studio-form-actions"><button className="primary-button" disabled={busy || !accepted} onClick={() => open("onboard")}>{busy ? "Se deschide…" : status.connected ? "Continuă configurarea Stripe" : "Conectează Stripe"}<ArrowUpRight size={18} /></button>{status.connected && <button className="studio-secondary" disabled={busy} onClick={() => open("dashboard")}>Panoul Stripe <ArrowUpRight size={18} /></button>}</div></>}
+      {shop.role === "owner" && status?.enabled && shop.status === "active" && <><label className="studio-check"><input type="checkbox" checked={accepted} onChange={(event) => setAccepted(event.target.checked)} /><span>Accept <Link href="/termeni#comisioane" target="_blank">condițiile pentru creatori și plăți</Link>.</span></label><div className="studio-form-actions"><button className="primary-button" disabled={busy || !accepted} onClick={() => open("onboard")}>{busy ? "Se deschide…" : status.connected ? "Continuă configurarea" : "Configurează încasările"}<ArrowUpRight size={18} /></button>{status.connected && <button className="studio-secondary" disabled={busy} onClick={() => open("dashboard")}>Deschide contul <ArrowUpRight size={18} /></button>}</div></>}
       <button className="studio-text-button" disabled={busy} onClick={refresh}>Verifică din nou starea</button>
     </div>
   </section>;

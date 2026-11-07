@@ -36,7 +36,43 @@ test("every real product exposes its review section and anonymous visitors retur
   expect((await request.get(`/api/reviews?productId=${productId}&mode=eligibility`)).status()).toBe(401);
   expect((await request.get("/api/reviews?productId=missing-product" )).status()).toBe(404);
   expect((await request.post("/api/reviews", { data: {} })).status()).toBe(401);
+  expect((await request.delete("/api/reviews", { data: { id: "10000000-0000-4000-8000-000000000003" } })).status()).toBe(401);
   expect(errors).toEqual([]);
+});
+
+test("MOCK review author can cancel deletion, retry a failure and remove a pending or approved review", async ({page},info)=>{
+  await signInFixture(page);
+  const id="10000000-0000-4000-8000-000000000003";
+  let ownReview: object|null={id,rating:4,body:"Recenzia mea de test.",status:"pending",created_at:"2026-11-07T10:00:00Z"};
+  let deleteCalls=0;
+  await page.route("**/api/reviews**",route=>{
+    if(route.request().method()==="DELETE") {
+      expect(route.request().postDataJSON()).toEqual({id}); deleteCalls++;
+      if(deleteCalls===1) return route.fulfill({status:503,json:{error:"Ștergerea nu este disponibilă momentan."}});
+      ownReview=null;return route.fulfill({json:{deleted:true}});
+    }
+    if(new URL(route.request().url()).searchParams.get("mode")==="eligibility") return route.fulfill({json:{hasReview:Boolean(ownReview),ownProduct:false,verifiedPurchase:false,ownReview}});
+    return route.fulfill({json:{reviews:[],total:0,rating:0,page:1,pageCount:0,available:true}});
+  });
+  await page.goto(`${productPath}#recenzii`);
+  const panel=page.locator('.feedback-compose');
+  await expect(panel).toContainText("Recenzia mea de test.");
+  await expect(panel).toContainText("În curs de moderare");
+  await panel.getByRole('button',{name:'Șterge recenzia',exact:true}).click();
+  await panel.getByRole('button',{name:'Anulează',exact:true}).click();
+  expect(deleteCalls).toBe(0);
+  ownReview={id,rating:4,body:"Recenzia mea de test.",status:"approved",created_at:"2026-11-07T10:00:00Z"};
+  await page.reload();await expect(panel).toContainText("Publicată");
+  await panel.getByRole('button',{name:'Șterge recenzia',exact:true}).click();
+  await page.locator('#recenzii').screenshot({path:info.outputPath(`MOCK-delete-review-${info.project.name}.png`)});
+  await panel.getByRole('button',{name:'Confirmă ștergerea',exact:true}).click();
+  await expect(page.locator('#recenzii').getByRole('alert')).toContainText("Ștergerea nu este disponibilă");
+  await expect(panel).toContainText("Recenzia mea de test.");
+  await panel.getByRole('button',{name:'Confirmă ștergerea',exact:true}).click();
+  await expect(panel.getByText("Recenzia a fost ștearsă.",{exact:true})).toBeVisible();
+  await expect(page.locator('.feedback-form')).toBeVisible();
+  await expect(page.locator('.feedback-score')).toHaveCount(0);
+  expect(deleteCalls).toBe(2);
 });
 
 test("MOCK eligible buyer selects stars, comments, retries a rejected submission and sees moderation status", async ({ page }, info) => {

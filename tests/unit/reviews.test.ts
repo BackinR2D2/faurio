@@ -1,13 +1,29 @@
 import { test } from "node:test";
 import assert from "node:assert/strict";
-import { reviewSubmissionSchema, safeAccountDestination } from "../../lib/reviews.ts";
+import { reviewDeletionSchema, reviewSubmissionSchema, safeAccountDestination } from "../../lib/reviews.ts";
 import { createClient } from "@supabase/supabase-js";
-import { eligibleReviewOrders } from "../../lib/review-queries.ts";
+import { deleteOwnedReview, eligibleReviewOrders } from "../../lib/review-queries.ts";
 import { createElement } from "react";
 import { renderToStaticMarkup } from "react-dom/server";
 import { ProductRating } from "../../components/product-rating.tsx";
 
 const submission = { code: "FAU-TEST", productId: "cana-luna-001", rating: 5, body: "O cană foarte frumoasă." };
+test("review deletion accepts only one review id, never a supplied owner or unbounded deletion", async () => {
+  const id = "10000000-0000-4000-8000-000000000003";
+  assert.deepEqual(reviewDeletionSchema.parse({id}),{id});
+  for (const value of [{}, {id:""}, {id:"not-a-uuid"}, {id,buyerId:"someone-else"}, {id,status:"approved"}]) assert.equal(reviewDeletionSchema.safeParse(value).success,false);
+  const db=createClient("https://fixture.supabase.co","fixture-key",{auth:{persistSession:false},global:{fetch:async(input,init)=>{
+    const url=new URL(String(input));
+    assert.equal(init?.method,"DELETE");assert.ok(init?.signal);
+    assert.equal(url.searchParams.get("buyer_id"),"eq.owner-from-verified-session");
+    assert.equal(url.searchParams.get("id"),`eq.${id}`);
+    assert.equal(url.searchParams.get("select"),"id");
+    return Response.json([{id}]);
+  }}});
+  assert.equal((await deleteOwnedReview(db,"owner-from-verified-session",id)).data?.id,id);
+  assert.throws(()=>deleteOwnedReview(db,"",id),/REVIEW_OWNER_REQUIRED/);
+  assert.throws(()=>deleteOwnedReview(db,"owner",""),/REVIEW_OWNER_REQUIRED/);
+});
 test("catalog stars show real counts, half stars and an honest empty rating",()=>{
   const populated=renderToStaticMarkup(createElement(ProductRating,{rating:4.5,count:2}));
   assert.match(populated,/4,5 din 5 stele, 2 recenzii/);

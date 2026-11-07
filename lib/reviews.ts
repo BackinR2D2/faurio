@@ -6,7 +6,9 @@ export const reviewSubmissionSchema = z.object({
 }).strict();
 export type PublicReview = { id: string; rating: number; body: string; created_at: string; verified_purchase: boolean };
 export type ReviewPage = { reviews: PublicReview[]; total: number; rating: number; page: number; pageCount: number; available: boolean };
-export type ReviewEligibility = { hasReview: boolean; ownProduct: boolean; verifiedPurchase: boolean };
+export const reviewDeletionSchema = z.object({ id: z.uuid() }).strict();
+export type OwnReview = { id: string; rating: number; body: string; status: "pending" | "approved" | "rejected"; created_at: string };
+export type ReviewEligibility = { hasReview: boolean; ownProduct: boolean; verifiedPurchase: boolean; ownReview?: OwnReview | null };
 
 export function safeAccountDestination(value: string | null) {
   return value && (/^\/(?:studio(?:\/[^?#]*)?|sell)(?:\?[^#]*)?$/.test(value) || /^\/produs\/[a-zA-Z0-9_-]+(?:#recenzii)?$/.test(value)) ? value : "/cont/profil";

@@ -382,6 +382,29 @@ test("registered users can review without buying, with honest verification, one 
   assert.equal(await sqlValue<number>("select reviews as value from public.products where id=$1",[productId]),1);
 });
 
+test("owner-scoped review deletion recalculates public ratings and permits a new moderated opinion",async()=>{
+  const reviewer="30000000-0000-4000-8000-000000000002";
+  const productId=await sqlValue<string>("select id as value from public.products where name='Vază cu încasări'");
+  const id=await sqlValue<string>("select id as value from public.product_reviews where buyer_id=$1 and product_id=$2",[reviewer,productId]);
+  await asUser(reviewer,()=>assert.rejects(db.query("delete from public.product_reviews where id=$1",[id]),/permission denied/));
+  await db.query("select public.moderate_buyer_feedback($1,'reviews',$2,'approved','Relevant review')",[operator,id]);
+  assert.equal(await sqlValue<number>("select reviews as value from public.products where id=$1",[productId]),2);
+  await db.exec("set role service_role");
+  try {
+    assert.equal((await db.query("delete from public.product_reviews where id=$1 and buyer_id=$2 returning id",[id,sellerB])).rows.length,0);
+    assert.equal((await db.query("delete from public.product_reviews where id=$1 and buyer_id=$2 returning id",[id,reviewer])).rows.length,1);
+  } finally {await db.exec("reset role");}
+  assert.equal(await sqlValue<number>("select count(*)::int as value from public.public_product_reviews where id=$1",[id]),0);
+  assert.equal(await sqlValue<number>("select reviews as value from public.products where id=$1",[productId]),1);
+  assert.equal(Number(await sqlValue<number>("select rating as value from public.products where id=$1",[productId])),5);
+  const next=await asUser(reviewer,()=>sqlValue<string>("select public.submit_product_review(null,$1,3,'O nouă părere despre produs.') as value",[productId]));
+  assert.notEqual(next,id);
+  assert.equal(await sqlValue<string>("select status as value from public.product_reviews where id=$1",[next]),"pending");
+  await db.exec("set role service_role");
+  try {await db.query("delete from public.product_reviews where id=$1 and buyer_id=$2",[next,reviewer]);} finally {await db.exec("reset role");}
+  assert.equal(await sqlValue<number>("select reviews as value from public.products where id=$1",[productId]),1);
+});
+
 test("stale SMTP leases become uncertain instead of being sent again",async()=>{
   const claim=await sqlValue<{id:string;lock_token:string;attempts:number}>("select row_to_json(e) as value from public.claim_order_email('FAU-BUYER') e");
   assert.ok(claim);

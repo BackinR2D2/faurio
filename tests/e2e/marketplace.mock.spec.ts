@@ -52,12 +52,29 @@ test("MOCK Connect: fee consent is required and onboarding redirects only to Str
   });
   await page.route("https://connect.stripe.com/**",route=>route.fulfill({contentType:"text/html",body:"<h1>MOCK Stripe onboarding</h1>"}));
   await page.goto(`/studio/payments?shop=${id}`);
-  const connect=page.getByRole("button",{name:"Conectează Stripe"});
+  const connect=page.getByRole("button",{name:"Configurează încasările"});
+  await expect(page.locator("main")).not.toContainText("Stripe");
+  await expect(page.getByText("Mod de test",{exact:true})).toBeVisible();
   await expect(connect).toBeDisabled();
   await page.getByRole("checkbox").check();await expect(connect).toBeEnabled();
   expect(await page.evaluate(()=>document.documentElement.scrollWidth<=window.innerWidth)).toBeTruthy();
   await page.screenshot({path:`docs/evidence/MOCK-connect-${info.project.name}.png`,fullPage:true});
   await connect.click();await expect(page).toHaveURL("https://connect.stripe.com/setup/fixture");expect(requested).toBeTruthy();
+});
+
+test("MOCK Connect: activation error is readable and never redirects or exposes provider branding",async({page})=>{
+  await studioFixture(page);
+  await page.route("**/api/studio/payments**",route=>route.request().method()==="POST"
+    ? route.fulfill({status:503,json:{error:"Configurarea încasărilor trebuie activată de administratorul platformei. Încearcă din nou după activare.",code:"CONNECT_ACTIVATION_REQUIRED"}})
+    : route.fulfill({json:{connected:false,enabled:true,ready:false,testMode:true}}));
+  await page.goto(`/studio/payments?shop=${id}`);
+  await page.getByRole("checkbox").check();
+  await page.getByRole("button",{name:"Configurează încasările"}).click();
+  await expect(page.locator("main").getByRole("alert")).toContainText("activată de administratorul platformei");
+  await expect(page.getByRole("button",{name:"Configurează încasările"})).toBeEnabled();
+  await expect(page.getByRole("checkbox")).toBeChecked();
+  await expect(page).toHaveURL(new RegExp(`/studio/payments\\?shop=${id}`));
+  await expect(page.locator("main")).not.toContainText("Stripe");
 });
 
 test("MOCK seller orders: real UI handles preparation, required tracking and delivery transitions",async({page},info)=>{
