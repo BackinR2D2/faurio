@@ -49,7 +49,7 @@ test("MOCK eligible buyer selects stars, comments, retries a rejected submission
   await expect(form.getByRole("button", { name: "Trimite recenzia" })).toBeEnabled();
   await expect(page.getByRole("radio", { name: "4 stele", exact: true })).toBeChecked();
   expect(await page.evaluate(() => document.documentElement.scrollWidth <= innerWidth)).toBe(true);
-  await page.screenshot({ path: info.outputPath(`MOCK-review-form-${info.project.name}.png`) });
+  await page.locator("#recenzii").screenshot({ path: info.outputPath(`MOCK-review-form-${info.project.name}.png`) });
   await form.getByRole("button", { name: "Trimite recenzia" }).click();
   await expect(page.locator("#recenzii").getByRole("alert")).toHaveText("Trimitere indisponibilă momentan.");
   await expect(page.getByRole("textbox", { name: "Comentariul tău" })).toHaveValue("Finisaj frumos, ambalare atentă și un produs bine realizat.");

@@ -56,6 +56,8 @@ Cele șapte comenzi plătite au fost comparate read-only cu sesiunile lor Stripe
 
 ## Verificarea publicării
 
+Recenziile sunt publicate în commitul `ee7d340`, deploy Netlify `6aef4492427fe11c0cecea10`, confirmat `ready`. Cele 32 de probe publice desktop/mobil au trecut după publicare. Prima rulare a avut 31/32: un test vechi solicita mereu `engine=groq`, deși cota a activat fallback-ul autorizat. Testul recunoaște acum exclusiv motivele 429/cotă zilnică și continuă să verifice bugetele, culorile și excluderile; fallback-ul nu este interpretat drept recomandare semantică. Nu s-a schimbat comportamentul aplicației pentru a satisface testul.
+
 Datele de publicare și PageSpeed de mai jos sunt istorice. Pentru noul commit, CI și probele publice se verifică separat în GitHub Actions/Netlify. Probele publice includ acum și hidratarea Admin, filtre precompletate/multiple și refuzul evenimentelor de plată nesemnate.
 
 Commitul `1876522` a fost publicat automat de GitHub pe Netlify. Cele 24 de teste publice desktop/mobil au trecut, iar pipeline-ul GitHub complet a încheiat cu succes testele, analiza statică și buildul. Probele publice includ selectoarele, modelele noi, excluderi/alternative în căutare, paginare și refuzul accesului anonim.

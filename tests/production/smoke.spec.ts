@@ -60,7 +60,11 @@ for(const path of ["/","/catalog","/makers","/sell","/sell/fees","/cont","/conta
 test("production search, pagination and anonymous authorization are safe",async({request})=>{
   const result=await request.post("/api/search",{data:{query:"as cauta un tricou maro, am un buget de 100 de lei maxim."}});
   expect(result.ok()).toBeTruthy();const body=await result.json();expect(body.configured).toBeTruthy();expect(body.products).toHaveLength(0);
-  expect(body.intent.engine).toBe("groq");
+  expect(["groq", "keywords"]).toContain(body.intent.engine);
+  if (body.intent.engine === "keywords") {
+    expect(["AI_PROVIDER_429", "AI_SEARCH_BUDGET_EXHAUSTED"]).toContain(body.intent.fallbackReason);
+    expect(body.intent.recommendations).toEqual([]);
+  }
   expect((await request.get("/catalog?page=99999")).status()).toBe(200);
   for(const path of ["/api/studio","/api/admin/finance","/api/admin/marketplace"]){expect((await request.get(path)).status()).toBe(401);}
 });
@@ -73,8 +77,13 @@ test("published search keeps alternatives and explicit exclusions", async ({ req
     const response = await request.post("/api/search", { data: { query: fixture.query } });
     expect(response.status()).toBe(200);
     const result = await response.json();
-    expect(result.intent.engine).toBe("groq");
-    expect(result.products.length).toBeGreaterThan(0);
+    expect(["groq", "keywords"]).toContain(result.intent.engine);
+    if (result.intent.engine === "keywords") {
+      expect(["AI_PROVIDER_429", "AI_SEARCH_BUDGET_EXHAUSTED"]).toContain(result.intent.fallbackReason);
+      expect(result.intent.recommendations).toEqual([]);
+      expect(result.intent.notice).toContain("Căutare după cuvinte-cheie");
+    }
+    if (result.intent.engine === "groq" || fixture.colors) expect(result.products.length).toBeGreaterThan(0);
     if (fixture.colors) expect(result.intent.filters.colorMatch).toBe("any");
     if (fixture.exclusions) expect(result.intent.filters.excludedProductTypes).toEqual(expect.arrayContaining(["Cană", "Vază"]));
     for (const product of result.products) {
