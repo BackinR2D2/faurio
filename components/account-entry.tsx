@@ -5,13 +5,12 @@ import { useRouter } from "next/navigation";
 import { useEffect, useState } from "react";
 import { ArrowRight, Eye, EyeOff, LockKeyhole } from "lucide-react";
 import { useAuth } from "@/components/auth-provider";
+import { safeAccountDestination } from "@/lib/reviews";
 
 type View = "login" | "signup" | "reset";
 
 function nextPage() {
-  const next = new URLSearchParams(window.location.search).get("next");
-  if (!next || !/^\/(?:studio(?:\/[^?#]*)?|sell)(?:\?[^#]*)?$/.test(next)) return "/cont/profil";
-  return next;
+  return safeAccountDestination(new URLSearchParams(window.location.search).get("next"));
 }
 
 export function AccountEntry() {

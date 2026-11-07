@@ -17,5 +17,5 @@ export default async function ProductPage({ params }: { params: Promise<{ id: st
   if (!product) notFound();
   const related = await getRelatedProducts(product);
   const jsonLd = { "@context": "https://schema.org", "@type": "Product", name: product.name, description: product.description, image: `${siteUrl}${product.image}`, brand: { "@type": "Brand", name: product.maker }, offers: { "@type": "Offer", priceCurrency: "RON", price: product.price, availability: product.stock > 0 && product.checkoutEligible !== false ? "https://schema.org/InStock" : "https://schema.org/OutOfStock" }, ...(product.reviews > 0 ? { aggregateRating: { "@type": "AggregateRating", ratingValue: product.rating, reviewCount: product.reviews } } : {}) };
-  return <><script type="application/ld+json" dangerouslySetInnerHTML={{ __html: JSON.stringify(jsonLd).replace(/</g, "\\u003c") }} /><ProductDetail product={product} related={related} /><ProductReviews productId={product.id} /></>;
+  return <><script type="application/ld+json" dangerouslySetInnerHTML={{ __html: JSON.stringify(jsonLd).replace(/</g, "\\u003c") }} /><ProductDetail product={product} related={related}><ProductReviews productId={product.id} /></ProductDetail></>;
 }

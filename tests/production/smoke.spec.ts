@@ -3,6 +3,20 @@ import { expect,test } from "@playwright/test";
 test("deployed health endpoint identifies Faurio",async({request})=>{
   const health=await request.get("/api/health");expect(health.ok()).toBeTruthy();expect((await health.json()).service).toBe("faurio");
 });
+test("public products expose reviews without exposing buyer identity or private order eligibility", async ({ page, request }) => {
+  await page.goto("/produs/cana-luna-001#recenzii");
+  await expect(page.locator("main")).toHaveCount(1);
+  await expect(page.getByRole("heading", { name: "Recenzii și comentarii" })).toBeVisible();
+  await expect(page.getByRole("button", { name: "Actualizează recenziile" })).toBeVisible();
+  await expect(page.locator("#recenzii").getByRole("link", { name: "Autentifică-te", exact: true })).toBeVisible();
+  expect(await page.evaluate(() => document.documentElement.scrollWidth <= innerWidth)).toBe(true);
+  const response = await request.get("/api/reviews?productId=cana-luna-001");
+  expect(response.status()).toBe(200);
+  const body = await response.json();
+  expect(body.available).toBe(true);
+  for (const review of body.reviews) expect(Object.keys(review).sort()).toEqual(["body", "created_at", "id", "rating"]);
+  expect((await request.get("/api/reviews?productId=cana-luna-001&mode=eligibility")).status()).toBe(401);
+});
 test("decimal manual prices render and respect both budget bounds without a query", async ({ page }) => {
   const errors: string[] = [];
   page.on("pageerror", error => errors.push(error.message));

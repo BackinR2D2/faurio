@@ -323,6 +323,16 @@ test("only delivered verified buyers can review; moderation controls ratings and
   await asUser(sellerA,async()=>{
     for(const state of ["preparing","shipped","delivered"])await db.query("select public.update_seller_fulfillment($1,'FAU-BUYER',$2,'Test courier','TEST123')",[shopA,state]);
   });
+  await asUser(sellerB, () => assert.rejects(db.query("select public.submit_product_review('FAU-BUYER',$1,5,'Foreign buyer comment')", [productId]), /verified_delivery_required/));
+  await asUser(buyer, () => assert.rejects(db.query("select public.submit_product_review('FAU-BUYER','legacy-vase',5,'Different product comment')"), /verified_delivery_required/));
+  await asUser(buyer, () => assert.rejects(db.query("select public.submit_product_review('FAU-BUYER',$1,6,'Invalid stars')", [productId]), /check constraint/));
+  await db.exec("begin");
+  try {
+    await db.query("update public.orders set user_id=$1 where code='FAU-BUYER'", [sellerA]);
+    await db.exec("set role authenticated");
+    await db.query("select set_config('request.jwt.claim.sub',$1,false)", [sellerA]);
+    await assert.rejects(db.query("select public.submit_product_review('FAU-BUYER',$1,5,'Own product comment')", [productId]), /self_review_forbidden/);
+  } finally { await db.exec("rollback"); }
   let reviewId="";let returnId="";
   await asUser(buyer,async()=>{
     reviewId=await sqlValue<string>("select public.submit_product_review('FAU-BUYER',$1,5,'Really lovely product') as value",[productId]);

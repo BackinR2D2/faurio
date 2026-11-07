@@ -9,7 +9,7 @@ import { money, type Product } from "@/lib/catalog";
 import { ProductCard } from "@/components/product-card";
 import productMedia from "@/lib/product-media.json";
 
-export function ProductDetail({ product, related }: { product: Product; related: Product[] }) {
+export function ProductDetail({ product, related, children }: { product: Product; related: Product[]; children?: React.ReactNode }) {
   const { addToCart, favorites, toggleFavorite } = useShop();
   const [quantity, setQuantity] = useState(1);
   const saved = favorites.includes(product.id);
@@ -23,7 +23,7 @@ export function ProductDetail({ product, related }: { product: Product; related:
       <div className="product-buy">
         <p className="eyebrow">{product.category} · {product.shopSlug ? <Link href={`/makers/${product.shopSlug}`}>{product.maker}</Link> : product.maker}, {product.makerLocation}</p>
         <h1>{product.name}</h1>
-        {product.reviews > 0 && <div className="detail-rating"><span><Star fill="currentColor" /> {product.rating}</span><a href="#recenzii">{product.reviews} recenzii</a></div>}
+        <div className="detail-rating">{product.reviews > 0 ? <><span><Star fill="currentColor" /> {product.rating}</span><a href="#recenzii">{product.reviews} {product.reviews === 1 ? "recenzie" : "recenzii"}</a></> : <a href="#recenzii">Scrie prima recenzie</a>}</div>
         <div className="detail-price">{money.format(product.price)} {product.oldPrice && <del>{money.format(product.oldPrice)}</del>}</div>
         <p className="detail-description">{product.description}</p>
         <ul className="detail-highlights">{product.details.map((detail) => <li key={detail}><Check /> {detail}</li>)}</ul>
@@ -36,6 +36,7 @@ export function ProductDetail({ product, related }: { product: Product; related:
       </div>
     </section>
 
+    {children}
     <section className="related-section"><div className="section-title"><h2>Produse similare</h2></div><div className="product-grid related-grid">{related.map((item) => <ProductCard key={item.id} product={item} />)}</div></section>
   </main>;
 }
