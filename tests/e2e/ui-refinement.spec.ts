@@ -42,7 +42,8 @@ test("catalog batches filter changes into one navigation, preserves URLs and sup
   await budget.fill("250");
   await budget.fill("150");
   await budget.fill("100");
-  await page.getByRole("combobox", { name: "Material", exact: true }).selectOption("sticlă reciclată");
+  await page.locator('summary[aria-label="Material"]').click();
+  await page.getByRole("checkbox", { name: "sticlă reciclată", exact: true }).check();
   expect(page.url()).toBe(original);
   expect(requests).toHaveLength(0);
   await page.getByRole("button", { name: "Aplică filtrele" }).click();

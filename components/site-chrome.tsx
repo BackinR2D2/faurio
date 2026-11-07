@@ -105,7 +105,7 @@ export function SiteHeader() {
   );
 }
 
-export function SiteFooter() {
+export function SiteFooter({ year }: { year: number }) {
   const pathname = usePathname();
   const [subscribed, setSubscribed] = useState(false);
   const [newsletterError, setNewsletterError] = useState("");
@@ -185,7 +185,7 @@ export function SiteFooter() {
         {newsletterError && <small>{newsletterError}</small>}
       </div>
       <p className="footer-bottom">
-        © {new Date().getFullYear()} {brand.name}
+        © {year} {brand.name}
       </p>
     </footer>
   );

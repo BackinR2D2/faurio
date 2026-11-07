@@ -12,6 +12,7 @@ const fixtures = [
   "as cauta un tricou maro, am un buget de 100 de lei maxim.",
   "personalized gift under 50 EUR",
   "pahare",
+  "O cană din ceramică sub 180 lei",
 ];
 let passed = 0;
 const selected = process.argv[2] ? fixtures.filter((_, index) => String(index + 1) === process.argv[2]) : fixtures;

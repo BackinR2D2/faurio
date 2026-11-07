@@ -25,7 +25,7 @@ export default function RootLayout({
 }>) {
   return (
     <html lang="ro">
-      <body><AuthProvider><ShopProvider><a className="skip-link" href="#continut">Sari la conținut</a><SiteHeader /><div id="continut">{children}</div><SiteFooter /></ShopProvider></AuthProvider></body>
+      <body><AuthProvider><ShopProvider><a className="skip-link" href="#continut">Sari la conținut</a><SiteHeader /><div id="continut">{children}</div><SiteFooter year={new Date().getUTCFullYear()} /></ShopProvider></AuthProvider></body>
     </html>
   );
 }

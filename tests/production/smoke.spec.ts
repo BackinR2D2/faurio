@@ -13,9 +13,9 @@ for(const path of ["/","/catalog","/makers","/sell","/sell/fees","/cont","/conta
       if (path === "/" && (page.viewportSize()?.width || 0) > 800) await expect(page.locator(".artisan-orbit")).toHaveAttribute("data-loaded", "true", { timeout: 25000 });
       if (path === "/catalog") {
         if ((page.viewportSize()?.width || 0) <= 850) await page.getByRole("button", { name: "Filtre", exact: true }).click();
-        const select = page.getByRole("combobox", { name: "Material", exact: true });
-        await expect(select).toHaveCSS("appearance", "none");
-        await expect(select).toHaveCSS("padding-right", "42px");
+        const select = page.locator('summary[aria-label="Material"]');
+        await expect(select.locator("svg")).toBeVisible();
+        await expect(select).toHaveCSS("padding-right", "14px");
         await expect(select).toHaveCSS("border-radius", "8px");
       }
       await page.screenshot({ path: info.outputPath(`PUBLIC-${path === "/" ? "home" : "catalog"}-${info.project.name}.png`) });
@@ -56,4 +56,38 @@ test("detailed new models are available on the public deployment", async ({ requ
     const asset = await response.json();
     expect(asset.materials.every((material: { normalTexture?: unknown; pbrMetallicRoughness?: { baseColorTexture?: unknown } }) => material.normalTexture && material.pbrMetallicRoughness?.baseColorTexture)).toBe(true);
   }
+});
+
+test("admin entry and reload hydrate without errors and unsigned payment events are rejected", async ({ page, request }) => {
+  const errors: string[] = [];
+  page.on("pageerror", error => errors.push(error.message));
+  page.on("console", message => { if (message.type() === "error" && /hydrat|didn't match|server rendered/i.test(message.text())) errors.push(message.text()); });
+  for (const path of ["/admin", "/admin/marketplace", "/admin/finance", "/admin/feedback"]) {
+    await page.goto(path);
+    await expect(page.locator("main h1").first()).toBeVisible();
+    await page.reload();
+    await expect(page.locator("main h1").first()).toBeVisible();
+    await expect(page.locator(".site-header .brand small")).toHaveCount(0);
+  }
+  expect(errors).toEqual([]);
+  for (const path of ["/api/stripe/webhook", "/api/stripe/connect"]) {
+    expect((await request.post(path, { data: {} })).status()).toBe(400);
+    expect((await request.post(path, { data: {}, headers: { "stripe-signature": "invalid-fixture-signature" } })).status()).toBe(400);
+  }
+});
+
+test("public catalog preserves multiple manual selections and interpreted budget and material", async ({ page }) => {
+  await page.goto(`/catalog?${new URLSearchParams([["categorie", "Ceramică"], ["categorie", "Sticlărie"], ["material", "ceramică glazurată"], ["material", "sticlă reciclată"]])}`);
+  await expect(page.locator(".category-tabs button.active")).toHaveText(["Ceramică", "Sticlărie"]);
+  await expect(page.locator(".product-card").first()).toBeVisible();
+  if ((page.viewportSize()?.width || 0) <= 850) await page.getByRole("button", { name: "Filtre", exact: true }).click();
+  await expect(page.locator('summary[aria-label="Material"]')).toContainText("ceramică glazurată");
+  await expect(page.locator('summary[aria-label="Material"]')).toContainText("sticlă reciclată");
+  await page.goto(`/catalog?q=${encodeURIComponent("O cană din ceramică sub 180 lei")}`);
+  await expect(page.locator(".product-card").first()).toBeVisible();
+  if ((page.viewportSize()?.width || 0) <= 850) await page.getByRole("button", { name: "Filtre", exact: true }).click();
+  await expect(page.getByRole("spinbutton", { name: "Preț maxim în lei" })).toHaveValue("180");
+  await expect(page.locator('summary[aria-label="Material"]')).toContainText("ceramică");
+  await expect(page.locator('summary[aria-label="Categorie"]')).toContainText("Ceramică");
+  await expect(page.locator('summary[aria-label="Tip de produs"]')).toContainText("Cană");
 });

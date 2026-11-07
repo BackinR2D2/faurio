@@ -31,6 +31,7 @@ export function StudioAppearance() {
       studioRequest<{ page: ShopPage; versions: Version[] }>(`/api/studio/appearance?shop=${shop.id}`, token, { signal: controller.signal }),
       studioRequest<{ previewProducts: Product[]; total: number }>(`/api/studio/products?shop=${shop.id}`, token, { signal: controller.signal }),
     ]).then(([appearance, catalog]) => {
+      if (controller.signal.aborted) return;
       const layout = layoutSchema.parse(appearance.page.draft);
       setDraft(layout); setSaved(JSON.stringify(layout)); setRevision(appearance.page.revision); setPublished(Boolean(appearance.page.published)); setVersions(appearance.versions); setProducts(catalog.previewProducts || []); setTotal(catalog.total);
     }).catch((caught) => { if (!controller.signal.aborted) setError(caught.message); });
@@ -80,7 +81,7 @@ export function StudioAppearance() {
     <a className="studio-preview-jump" href="#previzualizare">Vezi previzualizarea ↓</a>
     {error && <div role="alert" className="form-error">{error} <button onClick={() => window.location.reload()}>Reîncarcă ciorna</button></div>}{notice && <p role="status" className="studio-save-notice">{notice}</p>}
     <div className="appearance-grid"><div className="appearance-controls"><fieldset disabled={restricted}>
-      <div className="studio-panel-heading"><h2>Atmosferă</h2><button type="button" className="studio-icon-button" disabled={!history.length || busy} aria-label="Anulează ultima modificare" onClick={() => { const value = history.at(-1); if (value) { setDraft(value); setHistory(history.slice(0, -1)); setError(""); } }}><Undo2 size={18} /></button></div>
+      <div className="studio-panel-heading"><h2>Atmosferă</h2><button type="button" className="studio-icon-button" disabled={!history.length} aria-label="Anulează ultima modificare" onClick={() => { const value = history.at(-1); if (value) { setDraft(value); setHistory(history.slice(0, -1)); setError(""); setNotice(""); } }}><Undo2 size={18} /></button></div>
       <div className="theme-choices">{themes.map((theme) => <button key={theme} type="button" className={`theme-choice theme-${theme}`} aria-pressed={draft.theme === theme} onClick={() => edit((value) => ({ ...value, theme }))}><span className="theme-swatch" /><span>{themeLabels[theme]}</span>{draft.theme === theme && <Check size={14} />}</button>)}</div>
       <label>Tipografie<select value={draft.font} onChange={(event) => edit((value) => ({ ...value, font: event.target.value as ShopLayout["font"] }))}><option value="sans">Modernă · sans serif</option><option value="serif">Editorială · serif</option><option value="oswald">Expresivă · Oswald</option></select></label>
       <h2>Identitate</h2><label>Titlu<input value={draft.title} maxLength={100} onChange={(event) => edit((value) => ({ ...value, title: event.target.value }))} /></label><label>O propoziție despre tine<textarea rows={2} value={draft.subtitle} maxLength={240} onChange={(event) => edit((value) => ({ ...value, subtitle: event.target.value }))} /></label>

@@ -39,6 +39,7 @@ before(async () => {
   await db.exec(await readFile(new URL("../../supabase/migrations/202610300001_marketplace.sql", import.meta.url), "utf8"));
   await db.exec(await readFile(new URL("../../supabase/migrations/202610300002_product_media.sql", import.meta.url), "utf8"));
   for (const migration of ["202610300003_order_emails.sql", "202610310001_ai_search.sql", "202610310002_connect_and_fees.sql", "202610310003_shop_media.sql", "202610310004_buyer_trust.sql", "202611010001_shop_lifecycle.sql", "202611060001_search_constraints.sql"]) await db.exec(await readFile(new URL(`../../supabase/migrations/${migration}`, import.meta.url), "utf8"));
+  await db.exec(await readFile(new URL("../../supabase/migrations/202611070001_catalog_multi_filters.sql", import.meta.url), "utf8"));
   await db.query("insert into auth.users(id,email) values($1,'a@example.test'),($2,'b@example.test'),($3,'operator@example.test')", [sellerA, sellerB, operator]);
 });
 after(async () => { await db.close(); });
@@ -203,6 +204,28 @@ test("AI retrieval ranks the entire published catalog before paginating; all exp
   const last = await sqlValue<{page:number;products:unknown[]}>("select public.search_marketplace_catalog($1,'{}',999,12) as value", [intent]);
   assert.equal(last.page,7); assert.equal(last.products.length,3);
   await db.exec("set role anon"); try { await assert.rejects(db.query("select public.search_marketplace_catalog($1)",[intent]),/permission denied/); } finally { await db.exec("reset role"); }
+});
+
+test("manual multi-filters use OR within a group, AND across groups and keep query restrictions", async () => {
+  await db.exec("begin");
+  try {
+    for (const [id, type, category, material, price] of [["multi-a", "Cană", "Ceramică", "ceramică", 90], ["multi-b", "Jurnal", "Papetărie", "hârtie", 110], ["multi-c", "Cercei", "Bijuterii", "argint", 95], ["multi-d", "Pernă", "Textile", "in", 95]]) {
+      await db.query("insert into public.products(id,name,product_type,category,price,stock,active,listing_status,material,color,description) values($1,$1,$2,$3,$5,2,true,'published',$4,'bej','Multi filter fixture')", [id, type, category, material, price]);
+    }
+    const search = (filters: Record<string, unknown>, maxPrice = 250) => sqlValue<{ total: number; products: { id: string }[]; page: number }>("select public.search_marketplace_catalog($1,$2,999,48) as value", [{ productTypes: [], requiredTerms: ["Multi filter fixture"], filters: { maxPrice } }, filters]);
+    const mixed = await search({ categories: ["Ceramică", "Papetărie"], materials: ["ceramică", "hârtie"] });
+    assert.equal(mixed.total, 2); assert.equal(mixed.page, 1);
+    assert.equal((await search({ categories: ["Ceramică", "Papetărie"], materials: ["argint"] })).total, 0);
+    assert.equal((await search({ categories: ["Ceramică", "Papetărie"], maxPrice: 100 })).total, 1);
+    assert.equal((await search({ minPrice: 100 })).total, 1);
+    assert.equal((await search({ productTypes: ["Cană", "Jurnal"] })).total, 2);
+    assert.equal((await search({ maxPrice: 999 }, 100)).total, 3);
+    assert.deepEqual((await search({ materials: ["in"] })).products.map(row => row.id), ["multi-d"]);
+  } finally { await db.exec("rollback"); }
+  for (const role of ["anon", "authenticated"]) {
+    await db.exec(`set role ${role}`);
+    try { await assert.rejects(db.exec("select public.search_marketplace_catalog('{}','{}')"), /permission denied/); } finally { await db.exec("reset role"); }
+  }
 });
 
 test("shared AI quota is bounded across clients, and cache/usage tables are private", async () => {

@@ -27,7 +27,7 @@ export async function GET(request: Request) {
   ]);
   if (error) return Response.json({ error: error.message }, { status: 500 });
   return Response.json({
-    products: (productRows || []).map((row) => mapProduct(row)), page, pageCount: Math.ceil((count || 0) / 50), total: count || 0,
+    products: (productRows || []).map((row) => ({ ...mapProduct(row), active: Boolean(row.active) })), page, pageCount: Math.ceil((count || 0) / 50), total: count || 0,
     units: (stocks || []).reduce((sum, row) => sum + Number(row.stock || 0), 0), lowStock: (stocks || []).filter((row) => Number(row.stock || 0) <= 3).length,
     users: users || 0, orders: (orders || []).map((order) => ({ code: order.code, date: order.created_at, total: Number(order.total), customer: { name: order.customer_name, email: order.customer_email }, status: order.status })),
   });

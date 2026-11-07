@@ -12,13 +12,23 @@ Fiecare căutare nevidă este interpretată pe server prin Groq, cu modelul impl
 
 Nu este vector search și modelul nu inspectează fiecare fotografie. Rezumatele pe tip au maximum patru familii exemplu; relevanța trebuie evaluată și pentru categorii noi. Interpretarea este probabilistică, nu o garanție de înțelegere perfectă a oricărei povești.
 
+## Filtrele catalogului
+
+Interpretarea completează prețul minim/maxim, tipurile, materialele și pregătirea rapidă atunci când acestea sunt cerute. Categoriile sunt identificate din tipurile selectate și taxonomia întregului catalog, nu doar din produsele primei pagini. O interpretare eșuată nu completează presupuneri în formular.
+
+Categoriile, materialele și tipurile permit selecții multiple. Alternativele manuale folosesc OR în interiorul unui grup și AND între grupuri; ele rafinează cererea, fără să elimine bugetul sau excluderile din text. Limitele explicite rămân afișate în rezumat. Pentru o cerere diferită se trimite o căutare nouă, care elimină filtrele manuale precedente. „Resetează” elimină doar rafinările manuale, iar X elimină și cererea.
+
+URL-ul folosește parametri repetați `categorie`, `material`, `tip`, plus `pretMin`, `pret`, `rating`, `rapid` și `sort`. Linkurile vechi cu o singură categorie/material rămân valide. Numai câmpurile modificate manual sunt persistate; paginarea, reîncărcarea și Înapoi păstrează selecțiile.
+
+Migrarea `202611070001_catalog_multi_filters.sql` este aplicată în ae_proj. `npx tsx scripts/check-catalog-filters.ts` verifică read-only suportul RPC și refuzul execuției anonime. `npx tsx scripts/check-pilot.ts` verifică agregat starea configurării atelierelor și webhook-urilor TEST, fără clienți sau secrete în output.
+
 ## Configurare și indisponibilitate
 
 `GROQ_API_KEY` și `GROQ_MODEL=openai/gpt-oss-120b` sunt exclusiv server-side. Aplică migrările marketplace, `202610310001_ai_search.sql` și `202611060001_search_constraints.sql` numai dacă nu sunt deja aplicate. `GROQ_DAILY_SEARCH_LIMIT=200` limitează cererile noi, maximum 1.000; cache-ul comun este de o oră, legat de model și amprenta catalogului.
 
 Interpretările valide au și un cache local de maximum 15 secunde, care nu depășește expirarea indexului de inventar. Acesta evită recitirea interpretării la aplicarea filtrelor și paginării. Cheia locală separă textele originale prin hash; nu reutilizează rezultatul deja îmbinat al altui text care ar deveni identic după mascarea datelor personale. Erorile nu sunt păstrate. Rezultatele, prețurile, stocurile și vizibilitatea produselor sunt citite în continuare din baza de date la fiecare cerere.
 
-Timeout: 12 secunde; maximum 2.000 tokenuri de răspuns. Dacă lipsesc cheia, schema sau cota, ori furnizorul refuză cererea, căutarea returnează HTTP 503 și permite reîncercarea. Nu revine în tăcere la reguli și nu pretinde că lipsa serviciului înseamnă lipsă de produse. Catalogul fără query rămâne navigabil.
+Timeout: 12 secunde per încercare; maximum 1.500 tokenuri de răspuns. Dacă lipsesc cheia, schema sau cota, ori furnizorul refuză cererea, căutarea returnează HTTP 503 și permite reîncercarea. Nu revine în tăcere la reguli și nu pretinde că lipsa serviciului înseamnă lipsă de produse. Catalogul fără query rămâne navigabil.
 
 Planul gratuit are cote și nu oferă disponibilitate nelimitată: [Groq rate limits](https://console.groq.com/docs/rate-limits), [structured outputs](https://console.groq.com/docs/structured-outputs). `SEARCH_AI_ENABLED=false` este numai un comutator operațional pentru testarea indisponibilității, nu un motor alternativ.
 

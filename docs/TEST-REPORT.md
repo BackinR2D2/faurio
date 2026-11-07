@@ -2,16 +2,23 @@
 
 ## Cod și interfață
 
-- `npm test`: 92/92 teste unitare și de integrare PostgreSQL PGlite.
+- `npm test`: 99/99 teste unitare și de integrare PostgreSQL PGlite.
 - TypeScript strict, ESLint, build de producție și `git diff --check`: trecute.
-- 88 teste UI generale desktop/mobil și 18 teste de căutare cu Groq/Supabase reale: trecute în rulări separate.
-- Testele pentru indisponibilitatea forțată necesită serverul QA izolat. Testul care creează și închide ateliere este opt-in și nu a fost rulat peste baza curățată.
+- Rularea integrală desktop/mobil a trecut 119 cazuri și a identificat o cursă la Undo în Studio. Aceasta a fost remediată; regresia controlează explicit un autosave întârziat și revenirea atât în previzualizare, cât și în ciorna salvată. A fost repetată de trei ori pe fiecare viewport.
+- Cele 14 regresii dedicate Admin/catalog au trecut separat. Cele opt probe Admin au trecut și pe buildul de producție; cele două probe de indisponibilitate a căutării au trecut pe serverul QA izolat.
+- Cazul care creează și închide ateliere este opt-in și nu a fost rulat peste baza curățată.
+
+Incidentul istoric cu `<small>` în brand nu a fost reprodus. Acea etichetă nu mai există în brand; nu s-a ascuns problema cu `suppressHydrationWarning`. Intrarea directă în cele patru pagini Admin, reload-ul, navigarea client-side și sesiunea salvată simulată sunt verificate. Anul din footer este transmis de server, evitând diferențe între ceasuri; testul fixează browserul în anul 2040.
+
+În Admin au fost reparate tabelul prea lat pe mobil, butoanele inaccesibile, rollback-ul stocului și statisticile după confirmarea serverului. În Studio, Undo rămâne utilizabil în timpul autosave-ului.
 
 UI: selectoare comune în catalog, Contact, Studio, editor și formularele de produs; caret și focus conținut în câmp, fără contur albastru exterior. Sunt verificate navigarea, filtrele, cantitățile în coș, pagina produsului, formularele, recuperarea parolei cu transport simulat, editorul, moderarea produsului cu upload simulat, confirmarea plății fără afirmații false, accesul anonim refuzat și layout-urile responsive.
 
 Scena 3D a afișat toate cele șapte modele, fără repetări într-un ciclu, într-un singur canvas. Pauza la focus/interacțiune, tastatura și mișcarea redusă sunt verificate. Texturile au fost reduse de la 42.630.535 la 13.643.157 bytes; nu se descarcă toate simultan. Vaza albă și serviciul de ceai neutilizate au fost eliminate din proiect.
 
 ## Căutare reală
+
+Au răspuns cu succes 13 cereri sintetice prin Groq și baza găzduită. Bugetul minim/maxim, tipurile, categoriile și materialele sunt precompletate din interpretare. Categoriile provin din taxonomia completă, nu din prima pagină. Selecțiile multiple, aplicarea în lot, resetarea, căutarea nouă, reload-ul, paginarea și Înapoi sunt testate. Materialele cu punctuație sunt tratate literal; „in” nu se potrivește accidental cu „argint”.
 
 Au fost verificate: set de pahare versus pahare individuale, două tipuri alternative, culori alternative, limite zecimale de preț, stoc, excluderi de tip/culoare, laptop și tricou absente, cadou pentru profesor și un produs precis într-o poveste despre destinatar. Detaliile destinatarului nu devin automat atribute ale produsului. Alb nu se potrivește cu albastru prin simplă subsecvență.
 
@@ -23,13 +30,21 @@ Evaluarea intensivă a expus limitele gratuite Groq (429) și generări care ret
 
 Migrarea `202611060001_search_constraints.sql` a fost aplicată în ae_proj. Un test read-only al RPC-ului confirmă că excluderea tuturor tipurilor întoarce zero produse.
 
+Și migrarea `202611070001_catalog_multi_filters.sql` este aplicată. Probele read-only confirmă noile grupuri și refuzul execuției anonime. Nu au fost șterse date în această intervenție; curățarea descrisă mai jos este anterioară acestei verificări.
+
 După backup privat verificat prin SHA-256 și aprobarea exactă a utilizatorului, au fost șterse cele șapte ateliere non-legacy, cele două produse asociate și cele opt imagini ale lor. Cele 720 produse inițiale și toate cele șapte comenzi au fost comparate integral cu backup-ul; identificatorii celor două conturi existente au rămas identici. Atelierul intern a fost păstrat. Nu au fost șterse conturi Stripe. Înregistrările noi create ulterior de utilizator nu fac parte din acest snapshot.
 
 Netlify urmărește repository-ul privat `BackinR2D2/faurio`, branch `main`. Verificarea read-only a confirmat existența cheilor Groq, SMTP, ambelor webhook-uri de plată, secretului cron și URL-ului canonic HTTPS în contextul de producție. Valorile secrete nu apar în raport sau cod. Unele variabile locale sunt intenționat diferite de producție.
 
 SMTP: conexiunea și autentificarea Gmail sunt verificate fără mesaj nou. Outbox-ul are cinci notificări marcate `sent`; acceptarea SMTP nu dovedește livrarea în inbox. Confirmarea înscrierii a fost primită și confirmată de utilizator în testul anterior.
 
+Ultimele trei rulări verificate ale automatizării de retry email au rezultat `success`; secretul GitHub necesar există. Aceasta nu garantează livrarea sau execuția exact la fiecare cinci minute. Local, URL-ul este HTTP și secretul unui eventual webhook Connect local nu este configurat; endpoint-ul public este configurat separat.
+
+Cele șapte comenzi plătite au fost comparate read-only cu sesiunile lor Stripe: toate șapte sunt plătite în TEST, fără diferențe de total sau monedă. Ambele webhook-uri publice sunt active pentru evenimentele checkout/rambursare și `account.updated`. Nu s-a inițiat o plată sau rambursare nouă.
+
 ## Verificarea publicării
+
+Datele de publicare și PageSpeed de mai jos sunt istorice. Pentru noul commit, CI și probele publice se verifică separat în GitHub Actions/Netlify. Probele publice includ acum și hidratarea Admin, filtre precompletate/multiple și refuzul evenimentelor de plată nesemnate.
 
 Commitul `1876522` a fost publicat automat de GitHub pe Netlify. Cele 24 de teste publice desktop/mobil au trecut, iar pipeline-ul GitHub complet a încheiat cu succes testele, analiza statică și buildul. Probele publice includ selectoarele, modelele noi, excluderi/alternative în căutare, paginare și refuzul accesului anonim.
 

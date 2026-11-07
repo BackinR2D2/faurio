@@ -8,7 +8,7 @@ import { inventoryFingerprint, summarizeInventory, type InventoryRow } from "./i
 
 const inflight = new Map<string, Promise<ResolvedIntent>>();
 const recentIntents = new Map<string, { expires: number; intent: ResolvedIntent }>();
-let inventoryCache: { expires: number; work: Promise<{ taxonomy: SearchTaxonomy; context: ReturnType<typeof summarizeInventory>; fingerprint: string }> } | undefined;
+let inventoryCache: { expires: number; work: Promise<{ taxonomy: SearchTaxonomy; typeCategories: Record<string, string[]>; context: ReturnType<typeof summarizeInventory>; fingerprint: string }> } | undefined;
 
 async function readInventory(db: SupabaseClient) {
   if (inventoryCache && inventoryCache.expires > Date.now()) return inventoryCache.work;
@@ -25,10 +25,16 @@ async function readInventory(db: SupabaseClient) {
       }
     }
     const unique = (column: "product_type" | "category" | "material" | "color") => [...new Set(rows.map(row => row[column]))];
-    return { taxonomy: { productTypes: unique("product_type"), categories: unique("category"), materials: unique("material"), colors: unique("color") }, context: summarizeInventory(rows), fingerprint: inventoryFingerprint(rows) };
+    const typeCategories = Object.fromEntries(unique("product_type").map(type => [type, [...new Set(rows.filter(row => row.product_type === type).map(row => row.category))]]));
+    return { taxonomy: { productTypes: unique("product_type"), categories: unique("category"), materials: unique("material"), colors: unique("color") }, typeCategories, context: summarizeInventory(rows), fingerprint: inventoryFingerprint(rows) };
   })();
   inventoryCache = { expires: Date.now() + 30000, work };
   try { return await work; } catch (error) { inventoryCache = undefined; throw error; }
+}
+
+export async function getCatalogFilterOptions(db: SupabaseClient) {
+  const inventory = await readInventory(db);
+  return { ...inventory.taxonomy, typeCategories: inventory.typeCategories };
 }
 
 export async function resolveSearch(query: string, db: SupabaseClient): Promise<ResolvedIntent> {

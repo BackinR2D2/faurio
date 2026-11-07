@@ -34,6 +34,10 @@ export type Product = {
 export type CatalogFilters = {
   category?: string;
   material?: string;
+  categories?: string[];
+  materials?: string[];
+  productTypes?: string[];
+  minPrice?: number;
   maxPrice?: number;
   minRating?: number;
   ready?: boolean;
