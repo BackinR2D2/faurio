@@ -113,7 +113,15 @@ test("invented taxonomy, extra fields, unsafe operators and contradictory prices
   assert.throws(() => mergeAiIntent("cadou", { ...empty, productTypes: ["Unicorn inventat"] }, taxonomy));
   assert.equal(aiIntentSchema.safeParse({ ...empty, sql: "select *" }).success, false);
   assert.equal(aiIntentSchema.safeParse({ ...empty, requiredTerms: ["% OR 1=1"] }).success, false);
-  assert.equal(mergeAiIntent("pahare sub 100 lei", { ...empty, minPrice: 120 }, taxonomy).unsupported, true);
+  assert.equal(mergeAiIntent("pahare între 120 și 100 lei", empty, taxonomy).unsupported, true);
+});
+test("inventory prices cannot become invented budget constraints",()=>{
+  const result=mergeAiIntent("vaza pentru flori",{...empty,productTypes:["Vază"],minPrice:189,maxPrice:239},taxonomy);
+  assert.equal(result.filters.minPrice,undefined);assert.equal(result.filters.maxPrice,undefined);
+  const limited=mergeAiIntent("vaza sub 100 lei",{...empty,minPrice:189,maxPrice:239},taxonomy);
+  assert.equal(limited.filters.minPrice,undefined);assert.equal(limited.filters.maxPrice,100);
+  const minimum=mergeAiIntent("vaza de la 80,50 lei",{...empty,minPrice:189,maxPrice:239},taxonomy);
+  assert.equal(minimum.filters.minPrice,80.5);assert.equal(minimum.filters.maxPrice,undefined);
 });
 test("Groq transport uses strict schema, inventory grounding, a timeout and redacted user text", async () => {
   const fake = (async (url: string | URL | Request, init?: RequestInit) => {

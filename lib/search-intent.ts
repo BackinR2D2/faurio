@@ -35,6 +35,8 @@ const stopWords = new Set(["caut", "cauta", "cautam", "cautare", "vreau", "as", 
 const upperBudget = /\b(?:sub|maxim(?:um)?|max|cel mult|pana (?:la|in)|buget(?:ul)?(?: de)?|nu mai mult de|under|below|up to)\s*(?:este|e|de|:)?\s*(\d{1,6}(?:[.,]\d{1,2})?)(?:\s*(?:de\s+)?(?:lei|ron))?\b/;
 const upperBudgetSuffix = /\b(\d{1,6}(?:[.,]\d{1,2})?)\s*(?:de\s+)?(?:lei|ron)?\s*(?:maxim(?:um)?|max|cel mult)\b/;
 const priceRange = /\b(?:intre|between)\s+(\d{1,6}(?:[.,]\d{1,2})?)\s*(?:si|and|-)\s*(\d{1,6}(?:[.,]\d{1,2})?)(?:\s*(?:de\s+)?(?:lei|ron))?\b/;
+const lowerBudget = /\b(?:minimum|minim|min|macar|cel putin|peste|de la|at least|over)\s*(?:pret|de|:)?\s*(\d{1,6}(?:[.,]\d{1,2})?)\s*(?:de\s+)?(?:lei|ron)\b/;
+const lowerBudgetSuffix = /\b(\d{1,6}(?:[.,]\d{1,2})?)\s*(?:de\s+)?(?:lei|ron)\s*(?:minim(?:um)?|cel putin)\b/;
 const readyPattern = /\b(rapid|repede|urgent|1 zi|2 zile|doua zile|gata de trimis)\b/;
 const personalizedPattern = /\b(personalizabil[a-z]*|personalizat[a-z]*|personalized|customized)\b/;
 const deadlinePattern = /\b(pana (?:in )?(?:vineri|luni|marti|miercuri|joi|sambata|duminica)|maine|poimaine)\b/;
@@ -98,7 +100,8 @@ export function interpretNaturalQuery(query: string): SearchIntent {
   const foreignCurrency = /\b(eur|euro|usd|dollars?|gbp)\b/.test(normalized);
   const ceilings = [rangeMatch?.[2], budgetMatch?.[1], suffixBudgetMatch?.[1]].filter((value): value is string => value !== undefined).map(value => Number(value.replace(",", ".")));
   const maxPrice = foreignCurrency || !ceilings.length ? undefined : Math.min(...ceilings);
-  const minPrice = foreignCurrency ? undefined : rangeMatch ? Number(rangeMatch[1].replace(",", ".")) : undefined;
+  const floors = [rangeMatch?.[1], normalized.match(lowerBudget)?.[1], normalized.match(lowerBudgetSuffix)?.[1]].filter((value): value is string => value !== undefined).map(value => Number(value.replace(",", ".")));
+  const minPrice = foreignCurrency || !floors.length ? undefined : Math.max(...floors);
   const occasionMap: Record<string, string> = { nunta: "nuntă", aniversare: "aniversare", "casa noua": "casă nouă", multumire: "mulțumire", craciun: "Crăciun", cadou: "cadou" };
   const occasionKey = Object.keys(occasionMap).find((word) => normalized.includes(word));
   const occasion = occasionKey ? occasionMap[occasionKey] : undefined;
@@ -130,7 +133,7 @@ export function interpretNaturalQuery(query: string): SearchIntent {
   const followupWithoutContext = /\b(acelasi lucru|mai ieftin|same thing|cheaper)\b/.test(normalized) && !typeMatch;
   const contextSignals = maxPrice !== undefined || minPrice !== undefined || Boolean(occasion || recipients.length || mood || color || material || excludedMaterials.length || ready || personalizable || inStock);
   let remaining = normalized;
-  const consumedPatterns = [upperBudget, upperBudgetSuffix, priceRange, readyPattern, personalizedPattern, deadlinePattern, /\bin stoc\b/];
+  const consumedPatterns = [upperBudget, upperBudgetSuffix, priceRange, lowerBudget, lowerBudgetSuffix, readyPattern, personalizedPattern, deadlinePattern, /\bin stoc\b/];
   for (const match of typeMatches) consumedPatterns.push(match.pattern);
   if (occasionKey) consumedPatterns.push(new RegExp(`\\b${occasionKey}\\b`));
   if (moodRule) consumedPatterns.push(moodRule.pattern);
