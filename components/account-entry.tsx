@@ -28,6 +28,12 @@ export function AccountEntry() {
     if (!loading && user) router.replace(nextPage());
   }, [loading, router, user]);
 
+  useEffect(() => {
+    if (new URLSearchParams(window.location.search).get("deleted") === "1") {
+      queueMicrotask(() => setMessage("Contul tău a fost șters."));
+    }
+  }, []);
+
   const submit = async (event: React.FormEvent) => {
     event.preventDefault();
     setBusy(true);

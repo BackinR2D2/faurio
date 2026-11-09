@@ -419,6 +419,16 @@ h1, h2, h3 { overflow-wrap: break-word; }
 .understanding > a { display: grid; place-items: center; min-width: 36px; min-height: 36px; }
 .catalog-body { grid-template-columns: 200px minmax(0,1fr); gap: clamp(24px,4vw,56px); align-items: start; }
 .filter-panel { min-width: 0; gap: 22px; }
+.account-deletion { margin-top: 40px; border-top: 1px solid var(--line); padding-top: 28px; }
+.account-deletion h2 { margin: 0 0 12px; font-size: 26px; line-height: 1.4; }
+.account-deletion > p { max-width: 64ch; margin: 0 0 20px; color: var(--ink-soft); font-size: 13px; line-height: 1.8; }
+.account-deletion form { display: grid; gap: 18px; max-width: 420px; }
+.account-deletion label { font-size: 11px; line-height: 1.6; }
+.account-deletion input { min-height: 44px; font-size: 14px; }
+.account-delete-actions { display: flex; flex-wrap: wrap; align-items: center; gap: 18px; }
+.account-delete-button { min-height: 44px; padding: 12px 18px; border: 1px solid #963e35; border-radius: 8px; background: transparent; color: #963e35; font-size: 13px; cursor: pointer; }
+.account-delete-button:focus-visible { outline: 2px solid #963e35; outline-offset: 3px; }
+.account-delete-button:disabled { opacity: .5; cursor: not-allowed; }
 .catalog-filter-form { display: grid; grid-template-columns: minmax(0,1fr); min-width: 0; gap: 24px; }
 .catalog-filter-form > *, .catalog-filter-form fieldset { min-width: 0; }
 .catalog-filter-form input:not([type="checkbox"]), .catalog-filter-form select { max-width: 100%; }

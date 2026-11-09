@@ -42,9 +42,65 @@ before(async () => {
   for (const migration of ["202610300003_order_emails.sql", "202610310001_ai_search.sql", "202610310002_connect_and_fees.sql", "202610310003_shop_media.sql", "202610310004_buyer_trust.sql", "202611010001_shop_lifecycle.sql", "202611060001_search_constraints.sql"]) await db.exec(await readFile(new URL(`../../supabase/migrations/${migration}`, import.meta.url), "utf8"));
   await db.exec(await readFile(new URL("../../supabase/migrations/202611070001_catalog_multi_filters.sql", import.meta.url), "utf8"));
   await db.exec(await readFile(new URL("../../supabase/migrations/202611070002_open_product_reviews.sql", import.meta.url), "utf8"));
+  await db.exec(await readFile(new URL("../../supabase/migrations/202611090001_account_deletion.sql", import.meta.url), "utf8"));
   await db.query("insert into auth.users(id,email) values($1,'a@example.test'),($2,'b@example.test'),($3,'operator@example.test')", [sellerA, sellerB, operator]);
 });
 after(async () => { await db.close(); });
+
+test("account deletion is service-only, removes personal data and reviews, and retains closed order history", async () => {
+  const buyer = "20000000-0000-4000-8000-000000000001";
+  await db.query("insert into auth.users(id,email) values($1,'delete@example.test')", [buyer]);
+  await db.query("insert into public.user_shop_state(user_id) values($1)", [buyer]);
+  await db.exec("insert into public.newsletter_subscribers(email) values('delete@example.test')");
+  await db.query("insert into public.orders(code,customer_name,customer_email,shipping_address,total,status,user_id,items) values('DELETE-CLOSED','Buyer','delete@example.test','Address',100,'refunded',$1,$2)", [buyer, [{ id: "legacy-vase", quantity: 1 }]]);
+  await db.query("insert into public.return_requests(order_code,buyer_id,message,status) values('DELETE-CLOSED',$1,'Retur soluționat','resolved')", [buyer]);
+  await db.query("insert into public.product_reviews(product_id,buyer_id,rating,body,status) values('legacy-vase',$1,5,'Foarte frumoasă','approved')", [buyer]);
+  await asUser(buyer, () => assert.rejects(db.query("select public.delete_customer_account($1)", [buyer]), /permission denied/));
+  await db.exec("set role service_role");
+  try { await db.query("select public.delete_customer_account($1)", [buyer]); } finally { await db.exec("reset role"); }
+  for (const [table, key] of [["auth.users", "id"], ["public.profiles", "user_id"], ["public.user_shop_state", "user_id"], ["public.product_reviews", "buyer_id"]]) {
+    assert.equal(await sqlValue<number>(`select count(*)::int as value from ${table} where ${key}=$1`, [buyer]), 0);
+  }
+  assert.equal(await sqlValue<number>("select count(*)::int as value from public.orders where code='DELETE-CLOSED' and user_id is null"), 1);
+  assert.equal(await sqlValue<number>("select count(*)::int as value from public.return_requests where order_code='DELETE-CLOSED' and buyer_id is null"), 1);
+  assert.equal(await sqlValue<number>("select count(*)::int as value from public.newsletter_subscribers where email='delete@example.test'"), 0);
+});
+
+test("account deletion blocks pending orders, undelivered payments, open returns and workshops without partial cleanup", async () => {
+  const buyer = "20000000-0000-4000-8000-000000000002";
+  await db.query("insert into auth.users(id,email) values($1,'blocked@example.test')", [buyer]);
+  await db.query("insert into public.orders(code,customer_name,customer_email,shipping_address,total,status,user_id,items) values('DELETE-OPEN','Buyer','blocked@example.test','Address',100,'pending',$1,$2)", [buyer, [{ id: "legacy-vase", quantity: 1 }]]);
+  await assert.rejects(db.query("select public.delete_customer_account($1)", [buyer]), /account_open_orders/);
+  await db.exec("update public.orders set status='paid' where code='DELETE-OPEN'");
+  await assert.rejects(db.query("select public.delete_customer_account($1)", [buyer]), /account_open_orders/);
+  await db.exec("update public.orders set status='refunded' where code='DELETE-OPEN'");
+  await db.query("insert into public.return_requests(order_code,buyer_id,message) values('DELETE-OPEN',$1,'Retur în curs')", [buyer]);
+  await assert.rejects(db.query("select public.delete_customer_account($1)", [buyer]), /account_open_returns/);
+  await db.exec("update public.return_requests set status='resolved' where order_code='DELETE-OPEN'");
+  const shop = await apply(buyer, "Atelier blocat", "atelier-cont-blocat");
+  await assert.rejects(db.query("select public.delete_customer_account($1)", [buyer]), /account_open_shops/);
+  assert.equal(await sqlValue<number>("select count(*)::int as value from public.profiles where user_id=$1", [buyer]), 1);
+  await db.query("insert into public.seller_fee_acceptances(shop_id,user_id,version) values($1,$2,'seller-2026-10')", [shop, buyer]);
+  await asUser(buyer, () => db.query("select public.close_owned_shop($1,'atelier-cont-blocat')", [shop]));
+  await db.query("insert into public.marketplace_order_finance(order_code,shop_id,product_subtotal_minor,shipping_minor,fee_minor,seller_transfer_minor) values('DELETE-OPEN',$1,10000,0,550,9450)", [shop]);
+  await db.exec("update public.return_requests set buyer_id=null,status='reviewing' where order_code='DELETE-OPEN'");
+  await assert.rejects(db.query("select public.delete_customer_account($1)", [buyer]), /account_open_returns/);
+  await db.exec("update public.return_requests set status='resolved' where order_code='DELETE-OPEN'");
+  await db.exec("update public.orders set status='paid' where code='DELETE-OPEN'");
+  await assert.rejects(db.query("select public.delete_customer_account($1)", [buyer]), /account_open_orders/);
+  await db.query("insert into public.seller_fulfillments(order_code,shop_id,state) values('DELETE-OPEN',$1,'delivered')", [shop]);
+  await db.query("select public.delete_customer_account($1)", [buyer]);
+  assert.equal(await sqlValue<number>("select count(*)::int as value from public.seller_applications where shop_id=$1 and applicant_id is null", [shop]), 1);
+  assert.equal(await sqlValue<number>("select count(*)::int as value from public.seller_fee_acceptances where shop_id=$1 and user_id is null", [shop]), 1);
+  assert.equal(await sqlValue<number>("select count(*)::int as value from public.shop_memberships where user_id=$1", [buyer]), 0);
+  assert.equal(await sqlValue<number>("select count(*)::int as value from public.marketplace_order_finance where order_code='DELETE-OPEN'"), 1);
+});
+
+test("account deletion password attempts are limited per account and unavailable to browser roles", async () => {
+  const id = "20000000-0000-4000-8000-000000000003";
+  for (let index = 0; index < 6; index++) assert.equal(await sqlValue<boolean>("select public.claim_account_deletion_attempt($1) as value", [id]), index < 5);
+  await asUser(sellerA, () => assert.rejects(db.query("select public.claim_account_deletion_attempt($1)", [id]), /permission denied/));
+});
 
 test("shop closure is owner-only, confirms the slug, archives public content and keeps history", async () => {
   const owner = "10000000-0000-4000-8000-000000000009";
