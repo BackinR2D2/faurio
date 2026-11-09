@@ -418,8 +418,11 @@ h1, h2, h3 { overflow-wrap: break-word; }
 .understanding strong { font-size: 13px; font-weight: 500; }
 .understanding > a { display: grid; place-items: center; min-width: 36px; min-height: 36px; }
 .catalog-body { grid-template-columns: 200px minmax(0,1fr); gap: clamp(24px,4vw,56px); align-items: start; }
-.filter-panel { gap: 22px; }
-.catalog-filter-form { display: grid; gap: 24px; }
+.filter-panel { min-width: 0; gap: 22px; }
+.catalog-filter-form { display: grid; grid-template-columns: minmax(0,1fr); min-width: 0; gap: 24px; }
+.catalog-filter-form > *, .catalog-filter-form fieldset { min-width: 0; }
+.catalog-filter-form input:not([type="checkbox"]), .catalog-filter-form select { max-width: 100%; }
+.catalog-filter-form input[type="range"] { min-width: 0; margin-inline: 0; }
 .catalog-filter-form legend { font-family: inherit; font-size: 12px; font-weight: 600; line-height: 1.6; margin-bottom: 10px; }
 .catalog-filter-form select, .price-number input, .studio-shop-select select { width: 100%; min-width: 0; min-height: 44px; padding: 10px 12px; border: 1px solid var(--line); border-radius: 8px; background: var(--white); color: var(--ink); font: inherit; font-size: 13px; }
 select:not([multiple]) { appearance: none; -webkit-appearance: none; min-width: 0; max-width: 100%; min-height: 44px; border: 1px solid var(--line); border-radius: 8px; background-color: var(--white); color: var(--ink); font-family: inherit; font-size: 13px; line-height: 1.5; letter-spacing: normal; text-transform: none; background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='16' height='16' viewBox='0 0 24 24' fill='none' stroke='%2352666a' stroke-width='1.6' stroke-linecap='round' stroke-linejoin='round'%3E%3Cpath d='m7 10 5 5 5-5'/%3E%3C/svg%3E"); background-repeat: no-repeat; background-position: right 14px center; background-size: 16px; padding: 10px 42px 10px 12px; cursor: pointer; }
@@ -449,7 +452,7 @@ select:not([multiple]):disabled { opacity: .6; cursor: not-allowed; }
 }
 .catalog-multi-select > summary { display: flex; align-items: center; justify-content: space-between; gap: 12px; min-height: 44px; padding: 10px 14px 10px 12px; border: 1px solid var(--line); border-radius: 8px; background: var(--white); color: var(--ink); font-size: 13px; line-height: 1.5; cursor: pointer; list-style: none; }
 .catalog-multi-select > summary::-webkit-details-marker { display: none; }
-.catalog-multi-select > summary > span { min-width: 0; overflow: hidden; white-space: nowrap; text-overflow: ellipsis; }
+.catalog-multi-select > summary > span { flex: 1; min-width: 0; white-space: normal; overflow-wrap: anywhere; }
 .catalog-multi-select > summary svg { flex-shrink: 0; color: var(--ink-soft); }
 .catalog-multi-select > summary:focus-visible { outline: none; border-color: var(--ink); box-shadow: inset 0 0 0 1px var(--ink); }
 .catalog-multi-select[open] > summary svg { transform: rotate(180deg); }
@@ -457,6 +460,7 @@ select:not([multiple]):disabled { opacity: .6; cursor: not-allowed; }
 .multi-select-options > input { width: 100%; min-width: 0; padding: 8px; margin-bottom: 6px; border: 1px solid var(--line); border-radius: 6px; font-size: 12px; }
 .multi-select-choices { max-height: 210px; overflow-y: auto; overscroll-behavior: contain; }
 .multi-select-choices label { display: flex; align-items: center; gap: 9px; min-height: 40px; padding: 6px 4px; font-size: 12px; line-height: 1.6; cursor: pointer; }
+.multi-select-choices label > span { min-width: 0; overflow-wrap: anywhere; }
 .multi-select-choices input { flex-shrink: 0; width: 16px; height: 16px; margin: 0; accent-color: var(--teal); }
 .multi-select-choices p { font-size: 12px; margin: 8px 4px; }
 .multi-select-clear { margin-top: 6px; padding: 8px 4px; border: 0; background: transparent; color: var(--ink-soft); font-size: 11px; text-decoration: underline; cursor: pointer; }
