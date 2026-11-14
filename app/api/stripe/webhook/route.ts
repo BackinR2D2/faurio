@@ -5,6 +5,7 @@ import { getStripeClient } from "@/lib/stripe";
 import { persistStripeOrder } from "@/lib/stripe-order";
 import { getSupabaseAdmin } from "@/lib/supabase-server";
 import { reconcileChargeRefund } from "@/lib/commerce/refunds";
+import { acceptsTestCheckoutSession, acceptsTestPaymentEvent } from "@/lib/commerce/payment-policy";
 
 export const runtime = "nodejs";
 export const maxDuration = 30;
@@ -23,8 +24,11 @@ export async function POST(request: Request) {
     return Response.json({ error: "Semnătură Stripe invalidă." }, { status: 400 });
   }
 
+  if (!acceptsTestPaymentEvent(event)) return Response.json({ error: "Mediul evenimentului nu corespunde configurării plăților." }, { status: 400 });
+
   if (event.type === "checkout.session.completed" || event.type === "checkout.session.async_payment_succeeded") {
     const session = event.data.object;
+    if (!acceptsTestCheckoutSession(session)) return Response.json({ error: "Sesiunea de plată nu aparține mediului de test." }, { status: 400 });
     if (session.payment_status === "paid") {
       try { const order = await persistStripeOrder(session); after(() => notifyPaidOrder(order.code)); }
       catch (error) { return Response.json({ error: error instanceof Error ? error.message : "Comanda nu a putut fi confirmată." }, { status: 500 }); }
@@ -32,6 +36,7 @@ export async function POST(request: Request) {
   }
   if (event.type === "checkout.session.expired" || event.type === "checkout.session.async_payment_failed") {
     const session = event.data.object;
+    if (!acceptsTestCheckoutSession(session)) return Response.json({ error: "Sesiunea de plată nu aparține mediului de test." }, { status: 400 });
     const admin = getSupabaseAdmin();
     if (!admin) return Response.json({ error: "Baza de date nu este configurată." }, { status: 503 });
     if (session.client_reference_id) {

@@ -16,6 +16,8 @@
     "test:integration": "tsx --test tests/integration/*.test.ts",
     "test:e2e": "playwright test",
     "db:check": "node scripts/check-marketplace.mjs",
+    "db:prepare": "tsx scripts/prepare-database.ts",
+    "env:check": "tsx scripts/check-environment.ts",
     "db:media": "node scripts/sync-product-media.mjs",
     "email:check": "tsx scripts/check-email.ts",
     "email:dispatch": "tsx scripts/dispatch-email.ts",

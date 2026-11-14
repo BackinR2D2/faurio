@@ -58,7 +58,7 @@ test("MOCK Connect: fee consent is required and onboarding redirects only to Str
   await expect(connect).toBeDisabled();
   await page.getByRole("checkbox").check();await expect(connect).toBeEnabled();
   expect(await page.evaluate(()=>document.documentElement.scrollWidth<=window.innerWidth)).toBeTruthy();
-  await page.screenshot({path:`docs/evidence/MOCK-connect-${info.project.name}.png`,fullPage:true});
+  await page.screenshot({path:info.outputPath(`MOCK-connect-${info.project.name}.png`),fullPage:true});
   await connect.click();await expect(page).toHaveURL("https://connect.stripe.com/setup/fixture");expect(requested).toBeTruthy();
 });
 

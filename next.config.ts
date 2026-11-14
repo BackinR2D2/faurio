@@ -1,4 +1,8 @@
 import type { NextConfig } from "next";
+import { readDeploymentPolicy } from "./lib/deployment-policy.ts";
+
+const deployment = readDeploymentPolicy(process.env);
+if (!deployment.valid) throw new Error(`FAURIO_DEPLOYMENT_CONFIGURATION: ${deployment.errors.join(", ")}`);
 
 const nextConfig: NextConfig = {
   reactStrictMode: true,

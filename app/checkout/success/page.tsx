@@ -11,7 +11,7 @@ export const metadata = { title: "Confirmare comandă", robots: { index: false, 
 export default async function StripeSuccessPage({ searchParams }: { searchParams: Promise<{ session_id?: string }> }) {
   const sessionId = (await searchParams).session_id;
   const stripe = getStripeClient();
-  if (!sessionId?.startsWith("cs_") || !stripe) return <OrderUnconfirmed />;
+  if (!sessionId?.startsWith("cs_test_") || !stripe) return <OrderUnconfirmed />;
 
   let receipt: Awaited<ReturnType<typeof persistStripeOrder>> | null = null;
   try {

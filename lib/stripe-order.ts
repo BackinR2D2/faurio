@@ -1,5 +1,6 @@
 import type Stripe from "stripe";
 import { getSupabaseAdmin } from "@/lib/supabase-server";
+import { acceptsTestCheckoutSession } from "@/lib/commerce/payment-policy";
 
 function paymentReference(session: Stripe.Checkout.Session) {
   if (typeof session.payment_intent === "string") return session.payment_intent;
@@ -12,6 +13,7 @@ function hostedInvoiceUrl(session: Stripe.Checkout.Session) {
 }
 
 export async function persistStripeOrder(session: Stripe.Checkout.Session) {
+  if (!acceptsTestCheckoutSession(session)) throw new Error("Sesiunea de plată nu aparține mediului de test.");
   if (session.payment_status !== "paid" || session.currency !== "ron") throw new Error("Plata în RON nu este confirmată.");
   const admin = getSupabaseAdmin();
   if (!admin) throw new Error("Baza de date nu este configurată.");

@@ -1,5 +1,42 @@
 # Faurio — GitHub, integrare și pilot public
 
+## Pregătirea lansării comerciale — 14 noiembrie 2026
+
+Lansarea inițială urmărește România, RON și 3–5 ateliere invitate, fiecare expediind propriile produse. Pregătirea tehnică poate continua, dar comenzile și încasările reale nu se activează înainte de clarificarea activității autorizate a operatorului, a relațiilor cu atelierele și a responsabilităților financiare.
+
+`FAURIO_PAYMENT_MODE` acceptă `test`, `disabled` și valoarea rezervată `live`. Lipsa variabilei păstrează comportamentul TEST al instalării existente. `disabled` oprește operațiile Stripe; valorile necunoscute și cheile nepotrivite blochează plățile. `live` este intenționat blocat în această versiune, inclusiv cu o cheie LIVE validă. Înlocuirea cheii sau a acestei variabile nu constituie o lansare comercială.
+
+Checkoutul, clientul Stripe, health check-ul și verificarea configurării folosesc aceeași politică. Webhook-urile trebuie să aibă semnătură validă și să provină din TEST; confirmarea comenzii verifică atât `livemode=false`, cât și identificatorul unei sesiuni TEST. Raportul `launch:check` afișează separat politica de plăți și `commercialPaymentsReleased=false`, fără chei. Un raport reușit confirmă doar verificările tehnice descrise, nu eligibilitatea comercială.
+
+Înaintea activării comerciale rămân necesare: medii și baze de date separate, catalog real fără seed demonstrativ, configurarea Connect și a webhook-urilor LIVE, reconciliere/rambursări/dispute, condiții reale de transport, email comercial, documente validate, monitorizare și restaurare verificată. Nu se schimbă chei în hosting și nu se copiază sau șterg datele existente ca parte a acestei pregătiri.
+
+### Configurații separate și instalare nouă
+
+Stare verificată la 14 noiembrie 2026: proiectul Supabase `faurio-staging` (`tneoktxsddzhsbupliyi`, Stockholm) are instalarea curată aplicată și confirmată prin SQL Editor. Marcajul bazei este `staging`, amprenta surselor `89f65d5b532b5d098de8e815ef3656fb203b2b25608a6335f50ad7a8c37819f2`. După instalare: zero conturi, produse, ateliere și comenzi; zero tabele publice fără RLS; bucket-ul `shop-media` este privat. Proiectul demonstrativ `ae_proj` nu a fost modificat. Hostingul, emailul, callback-urile Auth și webhook-urile acestui mediu rămân de configurat și verificat; instalarea bazei nu înseamnă publicarea mediului.
+
+- Demonstrație: `.env.example`, cu `FAURIO_DEPLOYMENT=demo`. Instalarea existentă rămâne compatibilă dacă variabila lipsește.
+- Staging: `config/environments/staging.env.example`, cu proiect Supabase și adresă de site proprii, chei TEST și fără acces la date comerciale.
+- Pregătire comercială: `config/environments/commercial.env.example`, cu alt proiect Supabase, alt site și plăți obligatoriu `disabled` în această versiune.
+
+Fișierele exemplu nu conțin chei și nu sunt încărcate automat. Completează configurația aleasă în mediul dedicat; nu suprapune șabloanele peste `.env.local` existent și nu copia parolele demonstrației. Build-urile trebuie executate separat pentru fiecare mediu: variabilele `NEXT_PUBLIC_*` sunt incluse în bundle la build. Nu promova un build de staging în mediul comercial schimbând doar variabilele serverului. Folosește site-uri și proiecte distincte; preview-urile nu primesc chei sau date comerciale.
+
+`FAURIO_DEPLOYMENT` și `NEXT_PUBLIC_FAURIO_DEPLOYMENT` trebuie să coincidă. Pentru staging/commercial, ambele URL-uri Supabase trebuie să corespundă exact lui `FAURIO_SUPABASE_PROJECT_REF`. Proiectul demonstrativ existent este refuzat explicit. Configurările incoerente opresc pornirea/build-ul, iar clientul administrativ și autentificarea serverului refuză accesul când politica este invalidă. Cheile private nu se pun în variabile publice. `npm run env:check` verifică local configurația fără conectare la servicii și fără afișarea cheilor.
+
+Pentru o bază Supabase nouă se generează local scriptul complet, fără executare:
+
+```bash
+npm run db:prepare -- --environment staging
+npm run db:prepare -- --environment commercial
+```
+
+Rezultatele sunt `dist/database/clean-staging.sql` și `dist/database/clean-commercial.sql`, neincluse în Git. Generatorul folosește `schema.sql` și manifestul explicit al tuturor celor 12 migrări, nu `seed.sql`. Dacă apare o migrare nouă, manifestul trebuie revizuit înainte de generare. Amprenta surselor este în script și în marcajul instalării.
+
+Scriptul rezultat este destinat exclusiv unui proiect Supabase nou, gol. Refuză baze cu obiecte publice, conturi sau bucket-uri existente. Aplică schema și migrările într-o singură tranzacție; elimină numai atelierul și cuponul demonstrativ create intern în acea instalare proaspătă, elimină valoarea implicită a atelierului legacy și verifică rezultatul gol. Nu creează utilizatori sau produse. Creează bucket-ul privat pentru fotografii și marcajul privat `faurio_installation`, folosit de `launch:check` pentru a verifica mediul bazei.
+
+Nu executa scriptul în `ae_proj`. Generarea fișierelor nu creează și nu configurează proiecte Supabase/Netlify. Alegerea proiectului, aplicarea SQL, configurarea emailului și a URL-urilor Auth, conectarea hostingului și transferul cheilor necesită pași separați, cu confirmarea destinațiilor. Backup-ul complet și restaurarea unui mediu existent nu sunt înlocuite de acest generator.
+
+---
+
 Actualizat: 7 noiembrie 2026. Acest ghid este pentru un pilot public cu plăți Stripe TEST. Publicarea pe internet nu echivalează cu autorizarea comercială sau cu testarea încasărilor reale.
 
 Starea verificărilor este în [TEST-REPORT.md](TEST-REPORT.md). Cele zece migrări de mai jos sunt aplicate în `ae_proj`. NU le executa din nou acolo. Instrucțiunile rămân valabile pentru o bază nouă sau migrări încă neaplicate.
